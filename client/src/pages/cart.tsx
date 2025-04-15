@@ -27,7 +27,7 @@ const Cart = () => {
   };
 
   const totalAmount = items.reduce(
-    (sum, item) => sum + item.listing.price * item.quantity,
+    (sum, item) => sum + (item.listing?.price || 0) * item.quantity,
     0
   );
 
