@@ -260,20 +260,16 @@ const Header = () => {
             <ul className="flex space-x-8 py-3">
               <li>
                 <Link href="/">
-                  {({ isActive }) => (
-                    <span className={`${isActive ? "text-primary-600 font-medium border-b-2 border-primary-500 pb-3" : "text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors"}`}>
-                      {t("nav.home")}
-                    </span>
-                  )}
+                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                    {t("nav.home")}
+                  </span>
                 </Link>
               </li>
               <li className="relative group">
                 <Link href="/marketplace">
-                  {({ isActive }) => (
-                    <span className={`${isActive ? "text-primary-600 font-medium border-b-2 border-primary-500 pb-3" : "text-neutral-600 hover:text-primary-600 font-medium pb-3 group-hover:border-b-2 group-hover:border-primary-500 transition-colors"} flex items-center`}>
-                      {t("nav.categories")} <ChevronDown className="ml-1 h-4 w-4" />
-                    </span>
-                  )}
+                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 group-hover:border-b-2 group-hover:border-primary-500 transition-colors flex items-center">
+                    {t("nav.categories")} <ChevronDown className="ml-1 h-4 w-4" />
+                  </span>
                 </Link>
                 <div className="absolute left-0 top-full bg-white shadow-lg rounded-lg w-64 hidden group-hover:block z-50">
                   <ul className="py-2">
@@ -324,38 +320,30 @@ const Header = () => {
               </li>
               <li>
                 <Link href="/marketplace?featured=true">
-                  {({ isActive }) => (
-                    <span className={`${isActive ? "text-primary-600 font-medium border-b-2 border-primary-500 pb-3" : "text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors"}`}>
-                      {t("home.featured.title")}
-                    </span>
-                  )}
+                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                    {t("home.featured.title")}
+                  </span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?vendors=true">
-                  {({ isActive }) => (
-                    <span className={`${isActive ? "text-primary-600 font-medium border-b-2 border-primary-500 pb-3" : "text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors"}`}>
-                      {t("nav.vendors")}
-                    </span>
-                  )}
+                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                    {t("nav.vendors")}
+                  </span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?newArrivals=true">
-                  {({ isActive }) => (
-                    <span className={`${isActive ? "text-primary-600 font-medium border-b-2 border-primary-500 pb-3" : "text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors"}`}>
-                      {t("nav.newArrivals")}
-                    </span>
-                  )}
+                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                    {t("nav.newArrivals")}
+                  </span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?freeOnly=true">
-                  {({ isActive }) => (
-                    <span className={`${isActive ? "text-primary-600 font-medium border-b-2 border-primary-500 pb-3" : "text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors"}`}>
-                      {t("nav.freeResources")}
-                    </span>
-                  )}
+                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                    {t("nav.freeResources")}
+                  </span>
                 </Link>
               </li>
             </ul>

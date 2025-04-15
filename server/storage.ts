@@ -7,13 +7,14 @@ import {
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { DatabaseStorage } from "./storage-db";
 
 const MemoryStore = createMemoryStore(session);
 
 // 修改接口以包含所有CRUD方法
 export interface IStorage {
   // 会话存储
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 
   // 用户相关方法
   getUser(id: number): Promise<User | undefined>;
@@ -113,7 +114,7 @@ export class MemStorage implements IStorage {
   private userSavedListingIdCounter: number;
 
   // 会话存储
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 
   constructor() {
     // 初始化存储
@@ -143,6 +144,7 @@ export class MemStorage implements IStorage {
     this.userSavedListingIdCounter = 1;
 
     // 初始化会话存储
+    const MemoryStore = createMemoryStore(session);
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // 24小时清理过期会话
     });

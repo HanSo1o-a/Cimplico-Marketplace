@@ -1,103 +1,78 @@
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "wouter";
-import { LayoutGrid } from "lucide-react";
+import { useLocation } from "wouter";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileText, CheckSquare, FileCheck, FileSpreadsheet, FileBarChart } from "lucide-react";
 
-interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  count: number;
-  url: string;
-}
-
-const Categories = () => {
+const Categories: React.FC = () => {
   const { t } = useTranslation();
+  const [_, navigate] = useLocation();
 
-  const categories: Category[] = [
+  const categories = [
     {
-      id: "financial",
-      name: t("categories.financial"),
-      icon: "fa-file-invoice",
-      count: 125,
-      url: "/marketplace?category=financial"
+      id: "calculation",
+      name: t("categories.calculation"),
+      icon: <FileBarChart className="h-8 w-8" />,
+      color: "bg-blue-100 text-blue-600",
     },
     {
-      id: "audit",
-      name: t("categories.audit"),
-      icon: "fa-tasks",
-      count: 98,
-      url: "/marketplace?category=audit"
+      id: "checklist",
+      name: t("categories.checklist"),
+      icon: <CheckSquare className="h-8 w-8" />,
+      color: "bg-green-100 text-green-600",
     },
     {
-      id: "tax",
-      name: t("categories.tax"),
-      icon: "fa-calculator",
-      count: 76,
-      url: "/marketplace?category=tax"
+      id: "procedure",
+      name: t("categories.procedure"),
+      icon: <FileCheck className="h-8 w-8" />,
+      color: "bg-purple-100 text-purple-600",
     },
     {
-      id: "compliance",
-      name: t("categories.compliance"),
-      icon: "fa-check-square",
-      count: 54,
-      url: "/marketplace?category=compliance"
+      id: "report",
+      name: t("categories.report"),
+      icon: <FileText className="h-8 w-8" />,
+      color: "bg-amber-100 text-amber-600",
     },
     {
-      id: "analysis",
-      name: t("categories.analysis"),
-      icon: "fa-chart-line",
-      count: 89,
-      url: "/marketplace?category=analysis"
+      id: "otherSchedules",
+      name: t("categories.otherSchedules"),
+      icon: <FileSpreadsheet className="h-8 w-8" />,
+      color: "bg-red-100 text-red-600",
     },
-    {
-      id: "all",
-      name: t("categories.all"),
-      icon: "fa-th-list",
-      count: 450,
-      url: "/marketplace"
-    }
   ];
 
-  // Font Awesome script
-  useEffect(() => {
-    // Check if Font Awesome script is already loaded
-    if (!document.querySelector('script[data-fa-src]')) {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js';
-      script.setAttribute('data-fa-src', 'true');
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
   return (
-    <section className="py-12 bg-white">
+    <section className="py-12 bg-card">
       <div className="container mx-auto px-4">
-        <h2 className="font-heading text-2xl font-bold mb-8 flex items-center">
-          <LayoutGrid className="text-primary-500 mr-2 h-6 w-6" />
-          {t("home.categories.title")}
-        </h2>
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">{t("home.categories.title")}</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            {t("home.categories.description")}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 md:gap-6">
           {categories.map((category) => (
-            <Link key={category.id} href={category.url}>
-              <a className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 text-center hover:shadow-md transition-all hover:border-primary-300 group">
-                <div className="w-16 h-16 mx-auto bg-primary-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-primary-200 transition-colors">
-                  <i className={`fas ${category.icon} text-primary-600 text-2xl`}></i>
+            <Card
+              key={category.id}
+              className="cursor-pointer hover:shadow-md transition-shadow border-none"
+              onClick={() => navigate(`/marketplace?category=${category.id}`)}
+            >
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <div className={`p-3 rounded-full ${category.color} mb-4`}>
+                  {category.icon}
                 </div>
-                <h3 className="font-medium text-neutral-800">{category.name}</h3>
-                <p className="text-sm text-neutral-500 mt-1">
-                  {category.count} {t("home.categories.products")}
+                <h3 className="font-medium text-lg mb-1">{category.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {t("home.categories.browseCategory")}
                 </p>
-              </a>
-            </Link>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
     </section>
   );
 };
-
-import { useEffect } from "react";
 
 export default Categories;

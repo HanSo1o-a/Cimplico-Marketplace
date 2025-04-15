@@ -1,96 +1,97 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Heart, ShoppingCart } from "lucide-react";
-import { Listing, VendorProfile, User, ListingStatus } from "@shared/schema";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useLocation } from "wouter";
+import { Listing, ListingType } from "@shared/schema";
 import { useCartStore } from "@/store/useCartStore";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Heart,
+  ShoppingCart,
+  ExternalLink,
+  Tag,
+  CheckCircle,
+  Star,
+  FileText,
+  CheckSquare,
+  FileSpreadsheet,
+  FileBarChart,
+  FileCheck
+} from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface ProductCardProps {
-  listing: Listing;
-  vendor?: {
-    id: number;
-    companyName: string;
-    verificationStatus: string;
-    user?: {
-      id: number;
-      firstName: string;
-      lastName: string;
-      avatar: string | null;
-    } | null;
-  } | null;
-  isSaved?: boolean;
-  className?: string;
-  horizontal?: boolean;
+  product: Listing;
+  hideActions?: boolean;
 }
 
-const ProductCard = ({
-  listing,
-  vendor,
-  isSaved = false,
-  className = "",
-  horizontal = false
-}: ProductCardProps) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, hideActions = false }) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const { toast } = useToast();
-  const addItem = useCartStore((state) => state.addItem);
-  const [saved, setSaved] = useState(isSaved);
+  const { user } = useAuth();
+  const [_, navigate] = useLocation();
+  const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const addToCart = useCartStore((state) => state.addItem);
+  const cartItems = useCartStore((state) => state.items);
 
-  // Handle adding to cart
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    addItem(listing);
-    toast({
-      title: t("product.addedToCart"),
-      description: listing.title,
-    });
+  // 检查产品是否已在购物车中
+  const isInCart = cartItems.find((item) => item.id === product.id);
+
+  // 获取产品类型图标
+  const getTypeIcon = () => {
+    switch (product.type) {
+      case "calculation":
+        return <FileBarChart className="h-5 w-5" />;
+      case "checklist":
+        return <CheckSquare className="h-5 w-5" />;
+      case "procedure":
+        return <FileCheck className="h-5 w-5" />;
+      case "report":
+        return <FileText className="h-5 w-5" />;
+      case "otherSchedules":
+        return <FileSpreadsheet className="h-5 w-5" />;
+      default:
+        return <FileText className="h-5 w-5" />;
+    }
   };
 
-  // Handle toggling saved status
-  const handleToggleSave = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+  // 处理收藏点击
+  const handleSaveClick = async () => {
     if (!user) {
-      // Redirect to login if not logged in
-      window.location.href = "/auth";
+      toast({
+        title: t("common.authRequired"),
+        description: t("favorites.loginToSave"),
+        variant: "destructive",
+      });
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      if (saved) {
-        // Remove from favorites
-        await apiRequest("DELETE", `/api/users/favorites/${listing.id}`);
-        setSaved(false);
+      setIsLoading(true);
+      if (isSaved) {
+        // 从收藏中移除
+        await apiRequest("DELETE", `/api/favorites/${product.id}`);
         toast({
-          title: t("product.removedFromFavorites"),
+          title: t("favorites.removed"),
+          description: t("favorites.removedDescription"),
         });
       } else {
-        // Add to favorites
-        await apiRequest("POST", "/api/users/favorites", { listingId: listing.id });
-        setSaved(true);
+        // 添加到收藏
+        await apiRequest("POST", "/api/favorites", { listingId: product.id });
         toast({
-          title: t("product.savedToFavorites"),
+          title: t("favorites.added"),
+          description: t("favorites.addedDescription"),
         });
       }
-      
-      // Invalidate the cache for user favorites
-      queryClient.invalidateQueries(["/api/users/favorites"]);
+      setIsSaved(!isSaved);
     } catch (error) {
-      console.error("Error toggling favorite:", error);
       toast({
-        title: "Error",
-        description: "Failed to update favorites",
+        title: t("common.error"),
+        description: t("favorites.error"),
         variant: "destructive",
       });
     } finally {
@@ -98,152 +99,145 @@ const ProductCard = ({
     }
   };
 
-  // Determine if product is free
-  const isFree = listing.price === 0;
-
-  // Get badge variant for listing status
-  const getBadgeVariant = () => {
-    if (isFree) return "success";
-    if (listing.status === ListingStatus.PENDING) return "outline";
-    return "default";
+  // 点击产品时的导航
+  const handleCardClick = () => {
+    navigate(`/product/${product.id}`);
   };
 
-  // Get badge text based on listing status
-  const getBadgeText = () => {
-    if (isFree) return t("product.free");
-    if (listing.status === ListingStatus.PENDING) return t("product.pending");
-    return t("product.popular");
+  // 格式化价格
+  const formatPrice = (price: number) => {
+    if (price === 0) {
+      return t("product.free");
+    }
+    return `¥${price.toFixed(2)}`;
   };
 
-  // Get the first image or a placeholder
-  const getImage = () => {
-    const images = listing.images as string[];
-    return images && images.length > 0 
-      ? images[0] 
-      : "https://via.placeholder.com/400x225?text=No+Image";
+  // 添加到购物车
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isInCart) {
+      navigate("/cart");
+      return;
+    }
+    
+    addToCart({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      type: product.type || "",
+      image: product.images && product.images.length > 0 ? product.images[0] : null,
+      quantity: 1
+    });
+    
+    toast({
+      title: t("cart.added"),
+      description: t("cart.addedDescription", { title: product.title }),
+    });
   };
-
-  // Format price display
-  const formatPrice = () => {
-    if (isFree) return t("product.free");
-    return `¥${listing.price.toFixed(2)}`;
-  };
-
-  if (horizontal) {
-    return (
-      <Link href={`/products/${listing.id}`}>
-        <a className={`bg-white rounded-lg border border-neutral-200 overflow-hidden hover:shadow-md transition-shadow flex ${className}`}>
-          <div className="w-1/3">
-            <img 
-              src={getImage()} 
-              alt={listing.title} 
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="w-2/3 p-4">
-            <Badge variant={getBadgeVariant()} className="mb-2">
-              {getBadgeText()}
-            </Badge>
-            <h3 className="font-medium text-lg mb-1 hover:text-primary-600 transition-colors">
-              {listing.title}
-            </h3>
-            <p className="text-sm text-neutral-600 mb-3 line-clamp-2">
-              {listing.description}
-            </p>
-            <div className="flex justify-between items-center">
-              <div className="text-primary-700 font-bold">
-                {formatPrice()}
-              </div>
-              <Button 
-                variant="ghost"
-                size="sm"
-                className={`text-primary-600 hover:text-primary-800 ${saved ? 'text-red-500' : ''}`}
-                onClick={handleToggleSave}
-                disabled={isLoading}
-              >
-                <Heart className={`h-5 w-5 ${saved ? 'fill-red-500' : ''}`} />
-              </Button>
-            </div>
-          </div>
-        </a>
-      </Link>
-    );
-  }
 
   return (
-    <Link href={`/products/${listing.id}`}>
-      <a className={`bg-white rounded-lg border border-neutral-200 overflow-hidden hover:shadow-md transition-shadow group block ${className}`}>
-        <div className="relative">
-          <img 
-            src={getImage()} 
-            alt={listing.title} 
-            className="w-full h-48 object-cover"
+    <Card 
+      className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
+      onClick={handleCardClick}
+    >
+      <div className="aspect-video bg-muted/50 relative overflow-hidden">
+        {product.images && product.images.length > 0 ? (
+          <img
+            src={product.images[0]}
+            alt={product.title}
+            className="w-full h-full object-cover transition-transform hover:scale-105"
           />
-          {(isFree || listing.status === ListingStatus.PENDING) && (
-            <div className="absolute top-0 right-0 bg-accent-500 text-white text-xs font-bold px-2 py-1 m-2 rounded">
-              {getBadgeText()}
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-primary/10">
+            {getTypeIcon()}
+          </div>
+        )}
+        
+        {/* 标签 */}
+        <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+          {product.price === 0 && (
+            <Badge className="bg-green-500 hover:bg-green-600">
+              {t("product.free")}
+            </Badge>
+          )}
+          {product.isFeatured && (
+            <Badge variant="secondary">
+              {t("product.featured")}
+            </Badge>
+          )}
+        </div>
+
+        {/* 评分 */}
+        {product.rating && (
+          <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs py-1 px-2 rounded-md flex items-center">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
+            <span>{product.rating.toFixed(1)}</span>
+          </div>
+        )}
+      </div>
+
+      <CardContent className="p-4 flex-grow">
+        <div className="flex justify-between items-start mb-2">
+          <div className="text-sm font-medium text-muted-foreground flex items-center">
+            {getTypeIcon()}
+            <span className="ml-1">{t(`categories.${product.type || "other"}`)}</span>
+          </div>
+          {product.tags && product.tags.length > 0 && (
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Tag className="h-3 w-3 mr-1" />
+              <span>{product.tags[0]}</span>
             </div>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`absolute top-0 left-0 m-2 text-white bg-neutral-800 bg-opacity-50 hover:bg-opacity-70 p-2 rounded-full transition-colors ${saved ? 'text-red-500' : ''}`}
-            onClick={handleToggleSave}
-            disabled={isLoading}
-          >
-            <Heart className={`h-4 w-4 ${saved ? 'fill-red-500' : ''}`} />
-          </Button>
         </div>
-        <div className="p-4">
-          <div className="flex items-center mb-2">
-            {vendor?.verificationStatus === "APPROVED" && (
-              <Badge variant="secondary" className="bg-secondary-500 border-0 text-white mr-2">
-                {t("vendor.approved")}
-              </Badge>
-            )}
-            <span className="text-sm text-neutral-500 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              {/* Adding a random download count for demonstration */}
-              {Math.floor(Math.random() * 1000) + 100}
-            </span>
+
+        <h3 className="font-semibold mb-2 line-clamp-2">{product.title}</h3>
+        
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-3">
+          {product.description}
+        </p>
+
+        {product.vendor && (
+          <div className="flex items-center mt-auto text-sm">
+            <CheckCircle className="h-3 w-3 text-primary mr-1" />
+            <span className="text-muted-foreground">{product.vendor.companyName}</span>
           </div>
-          <h3 className="font-medium text-lg mb-1 group-hover:text-primary-600 transition-colors line-clamp-1">
-            {listing.title}
-          </h3>
-          <p className="text-sm text-neutral-600 mb-3 line-clamp-2">
-            {listing.description}
-          </p>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <Avatar className="w-6 h-6 mr-1">
-                <AvatarImage src={vendor?.user?.avatar || undefined} />
-                <AvatarFallback className="bg-primary-100 text-primary-700 text-xs">
-                  {vendor?.user?.firstName?.[0]}{vendor?.user?.lastName?.[0]}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-xs text-neutral-500 truncate max-w-[100px]">
-                {vendor?.companyName || t("product.vendor")}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-primary-700 font-bold">{formatPrice()}</span>
-              {!isFree && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1 text-primary-600 hover:text-primary-800"
-                  onClick={handleAddToCart}
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
+        )}
+      </CardContent>
+
+      <CardFooter className="p-4 pt-0 mt-auto flex justify-between items-center">
+        <div className="font-semibold">
+          {formatPrice(product.price)}
         </div>
-      </a>
-    </Link>
+        
+        {!hideActions && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSaveClick();
+              }}
+              disabled={isLoading}
+            >
+              <Heart className={`h-4 w-4 ${isSaved ? "fill-red-500 text-red-500" : ""}`} />
+              <span className="sr-only">{t("product.save")}</span>
+            </Button>
+            
+            <Button
+              variant={isInCart ? "default" : "outline"}
+              size="sm"
+              className="flex-shrink-0"
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              <span>{isInCart ? t("cart.viewCart") : t("cart.addToCart")}</span>
+            </Button>
+          </div>
+        )}
+      </CardFooter>
+    </Card>
   );
 };
 

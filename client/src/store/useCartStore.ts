@@ -1,79 +1,99 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { Listing } from '@shared/schema';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-interface CartItem {
-  listing: Listing;
+// 购物车项类型
+export interface CartItem {
+  id: number;
+  title: string;
+  price: number;
+  type: string;
+  image: string | null;
   quantity: number;
 }
 
-interface CartStore {
+// 购物车状态类型
+interface CartState {
   items: CartItem[];
-  addItem: (listing: Listing, quantity?: number) => void;
-  removeItem: (listingId: number) => void;
-  updateQuantity: (listingId: number, quantity: number) => void;
+  
+  // 添加商品到购物车
+  addItem: (item: CartItem) => void;
+  
+  // 从购物车移除商品
+  removeItem: (id: number) => void;
+  
+  // 更新商品数量
+  updateQuantity: (id: number, quantity: number) => void;
+  
+  // 清空购物车
   clearCart: () => void;
-  getTotal: () => number;
+  
+  // 获取购物车商品总数
   getItemsCount: () => number;
+  
+  // 获取购物车总金额
+  getTotalPrice: () => number;
 }
 
-export const useCartStore = create<CartStore>()(
+// 创建购物车存储
+export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
       
-      addItem: (listing: Listing, quantity = 1) => {
-        set((state) => {
-          const existingItemIndex = state.items.findIndex(
-            (item) => item.listing.id === listing.id
-          );
-          
-          if (existingItemIndex >= 0) {
-            // 商品已存在，增加数量
-            const newItems = [...state.items];
-            newItems[existingItemIndex].quantity += quantity;
-            return { items: newItems };
-          } else {
-            // 新增商品
-            return { items: [...state.items, { listing, quantity }] };
-          }
-        });
+      addItem: (item) => {
+        const { items } = get();
+        const existingItemIndex = items.findIndex((i) => i.id === item.id);
+
+        if (existingItemIndex >= 0) {
+          // 如果商品已存在，更新数量
+          const updatedItems = [...items];
+          updatedItems[existingItemIndex] = {
+            ...updatedItems[existingItemIndex],
+            quantity: updatedItems[existingItemIndex].quantity + item.quantity,
+          };
+          set({ items: updatedItems });
+        } else {
+          // 如果商品不存在，添加到购物车
+          set({ items: [...items, item] });
+        }
       },
       
-      removeItem: (listingId: number) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.listing.id !== listingId)
-        }));
+      removeItem: (id) => {
+        const { items } = get();
+        set({ items: items.filter((item) => item.id !== id) });
       },
       
-      updateQuantity: (listingId: number, quantity: number) => {
-        set((state) => ({
-          items: state.items.map((item) =>
-            item.listing.id === listingId
-              ? { ...item, quantity: Math.max(1, quantity) }
-              : item
-          )
-        }));
+      updateQuantity: (id, quantity) => {
+        const { items } = get();
+        if (quantity <= 0) {
+          set({ items: items.filter((item) => item.id !== id) });
+        } else {
+          set({
+            items: items.map((item) =>
+              item.id === id ? { ...item, quantity } : item
+            ),
+          });
+        }
       },
       
-      clearCart: () => {
-        set({ items: [] });
+      clearCart: () => set({ items: [] }),
+      
+      getItemsCount: () => {
+        const { items } = get();
+        return items.reduce((total, item) => total + item.quantity, 0);
       },
       
-      getTotal: () => {
-        return get().items.reduce(
-          (total, item) => total + item.listing.price * item.quantity,
+      getTotalPrice: () => {
+        const { items } = get();
+        return items.reduce(
+          (total, item) => total + item.price * item.quantity,
           0
         );
       },
-      
-      getItemsCount: () => {
-        return get().items.reduce((count, item) => count + item.quantity, 0);
-      }
     }),
     {
-      name: 'cimplico-cart',
-      partialize: (state) => ({ items: state.items })
+      name: "cart-storage", // 用于localStorage的键名
+      version: 1, // 版本号
     }
   )
 );

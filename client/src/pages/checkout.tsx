@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 const Checkout = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [_, navigate] = useNavigate();
+  const [_, navigate] = useLocation();
   const { user } = useAuth();
   const { items, clearCart } = useCartStore();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -35,7 +35,7 @@ const Checkout = () => {
   }
 
   const subtotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + item.listing.price * item.quantity,
     0
   );
   const tax = 0; // 在真实应用中应该计算税费

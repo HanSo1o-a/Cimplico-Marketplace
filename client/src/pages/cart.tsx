@@ -27,7 +27,7 @@ const Cart = () => {
   };
 
   const totalAmount = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + item.listing.price * item.quantity,
     0
   );
 
@@ -48,13 +48,13 @@ const Cart = () => {
           <div className="lg:col-span-2">
             <div className="space-y-4">
               {items.map((item) => (
-                <Card key={item.id} className="overflow-hidden">
+                <Card key={item.listing.id} className="overflow-hidden">
                   <div className="flex flex-col md:flex-row">
                     <div className="w-full md:w-1/4 bg-secondary aspect-square flex items-center justify-center md:aspect-auto">
-                      {item.image ? (
+                      {item.listing.image ? (
                         <img
-                          src={item.image}
-                          alt={item.name}
+                          src={item.listing.image}
+                          alt={item.listing.title}
                           className="object-cover w-full h-full"
                         />
                       ) : (
@@ -63,18 +63,18 @@ const Cart = () => {
                     </div>
                     <div className="flex-1 p-4">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-lg">{item.name}</h3>
+                        <h3 className="font-medium text-lg">{item.listing.title}</h3>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="text-destructive"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => removeItem(item.listing.id)}
                         >
                           {t("cart.remove")}
                         </Button>
                       </div>
                       <p className="text-muted-foreground mb-4 line-clamp-2">
-                        {item.description}
+                        {item.listing.description}
                       </p>
                       <div className="flex justify-between items-center mt-auto">
                         <div className="flex items-center gap-2">
@@ -82,7 +82,7 @@ const Cart = () => {
                             variant="outline"
                             size="sm"
                             disabled={item.quantity <= 1}
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.listing.id, item.quantity - 1)}
                           >
                             -
                           </Button>
@@ -90,13 +90,13 @@ const Cart = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.listing.id, item.quantity + 1)}
                           >
                             +
                           </Button>
                         </div>
                         <div className="font-medium">
-                          {formatPrice(item.price)}
+                          {formatPrice(item.listing.price)}
                         </div>
                       </div>
                     </div>

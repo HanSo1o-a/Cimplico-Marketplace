@@ -1,76 +1,69 @@
-import { useState, useRef, useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { useLanguageStore } from "@/store/useLanguageStore";
-import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
+import { Check, Globe } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Globe } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-const LanguageSwitcher = () => {
+// 支持的语言列表
+const languages = [
+  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "en", name: "English", flag: "🇬🇧" }
+];
+
+const LanguageSwitcher: React.FC = () => {
   const { i18n } = useTranslation();
-  const { language, setLanguage } = useLanguageStore();
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const currentLanguage = i18n.language;
 
-  const languages = [
-    { code: "zh", name: "简体中文" },
-    { code: "en", name: "English" }
-  ];
-
-  // Get the current language name
-  const getCurrentLanguageName = () => {
-    return languages.find(lang => lang.code === language)?.name || languages[0].name;
+  // 切换语言函数
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+    // 保存语言设置到 localStorage
+    localStorage.setItem("i18nextLng", lng);
   };
 
-  const handleLanguageChange = (langCode: string) => {
-    setLanguage(langCode);
-    setIsOpen(false);
+  // 获取当前语言名称和旗帜
+  const getCurrentLanguageInfo = () => {
+    const lang = languages.find((l) => l.code === currentLanguage);
+    return lang || languages[0]; // 默认返回第一个语言
   };
 
-  // Close the dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  const currentLang = getCurrentLanguageInfo();
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="text-neutral-100 hover:text-white flex items-center gap-1 px-1 h-7"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-neutral-300 hover:text-white flex items-center"
         >
-          <Globe className="h-4 w-4" />
-          <span className="text-sm">{getCurrentLanguageName()}</span>
+          <Globe className="h-4 w-4 mr-1" />
+          <span className="hidden sm:inline-block">
+            {currentLang.flag} {currentLang.name}
+          </span>
+          <span className="sm:hidden">
+            {currentLang.flag}
+          </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        ref={menuRef}
-        className="w-36 bg-neutral-800 border-neutral-700"
-        align="start"
-      >
+      <DropdownMenuContent align="start">
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
-            className={`text-neutral-100 hover:text-white hover:bg-neutral-700 cursor-pointer ${
-              lang.code === language ? "bg-primary-600 text-white" : ""
-            }`}
-            onClick={() => handleLanguageChange(lang.code)}
+            onClick={() => changeLanguage(lang.code)}
+            className="cursor-pointer flex items-center justify-between"
           >
-            {lang.name}
+            <span>
+              {lang.flag} {lang.name}
+            </span>
+            {currentLanguage === lang.code && (
+              <Check className="h-4 w-4 ml-2" />
+            )}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
