@@ -158,12 +158,12 @@ const AuthPage = () => {
                   />
                   
                   <div className="flex items-center justify-between">
-                    <a href="#" className="text-sm text-primary-600 hover:underline">
+                    <a href="#" className="text-sm text-primary hover:underline font-medium">
                       {t("auth.forgotPassword")}
                     </a>
                     <div className="text-sm">
                       {t("auth.noAccount")}{" "}
-                      <button type="button" onClick={() => setActiveTab("register")} className="text-primary-600 hover:underline">
+                      <button type="button" onClick={() => setActiveTab("register")} className="text-primary hover:underline font-medium">
                         {t("auth.register")}
                       </button>
                     </div>
@@ -171,7 +171,7 @@ const AuthPage = () => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary-600 hover:bg-primary-700"
+                    className="w-full bg-primary hover:bg-primary/90 text-white font-bold shadow-md"
                     disabled={loginMutation.isPending}
                   >
                     {loginMutation.isPending ? t("common.loading") : t("auth.login")}
@@ -277,14 +277,14 @@ const AuthPage = () => {
                   
                   <div className="text-sm text-center">
                     {t("auth.alreadyRegistered")}{" "}
-                    <button type="button" onClick={() => setActiveTab("login")} className="text-primary-600 hover:underline">
+                    <button type="button" onClick={() => setActiveTab("login")} className="text-primary hover:underline font-medium">
                       {t("auth.login")}
                     </button>
                   </div>
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary-600 hover:bg-primary-700"
+                    className="w-full bg-primary hover:bg-primary/90 text-white font-bold shadow-md"
                     disabled={registerMutation.isPending}
                   >
                     {registerMutation.isPending ? t("common.loading") : t("auth.register")}
@@ -296,7 +296,7 @@ const AuthPage = () => {
         </div>
 
         {/* Information Section */}
-        <div className="md:w-1/2 p-6 bg-gradient-to-r from-primary-600 to-primary-800 text-white rounded-lg shadow-lg flex flex-col justify-center">
+        <div className="md:w-1/2 p-6 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg shadow-lg flex flex-col justify-center">
           <h2 className="text-3xl font-bold mb-6">
             {showVendorForm 
               ? t("vendor.becomeVendor") 
