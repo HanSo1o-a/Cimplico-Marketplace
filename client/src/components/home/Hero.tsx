@@ -202,7 +202,7 @@ const Hero: React.FC = () => {
                     </p>
                     <div className="flex justify-between items-center mt-2">
                       <span className="font-bold text-lg bg-gradient-to-br from-primary to-primary/80 bg-clip-text text-transparent">¥199</span>
-                      <Button size="sm" className="rounded-full" onClick={(e) => {e.stopPropagation(); navigate('/products/1')}t/1');}}>
+                      <Button size="sm" className="rounded-full" onClick={(e) => {e.stopPropagation(); navigate('/product/1');}}>
                         {t("hero.learnMore")}
                       </Button>
                     </div>
