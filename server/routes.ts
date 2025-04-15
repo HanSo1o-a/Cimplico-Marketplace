@@ -1093,6 +1093,285 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 订单API路由
+  // 创建订单
+  app.post("/api/orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      const { items, totalAmount, currency } = req.body;
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ message: "订单项不能为空" });
+      }
+
+      // 创建订单
+      const order = await storage.createOrder({
+        userId: req.user.id,
+        totalAmount,
+        currency: currency || "CNY",
+        status: OrderStatus.CREATED
+      });
+
+      // 创建订单项
+      for (const item of items) {
+        await storage.createOrderItem({
+          orderId: order.id,
+          listingId: item.listingId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice
+        });
+      }
+
+      res.status(201).json(order);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 获取用户订单
+  app.get("/api/users/orders", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      const orders = await storage.getOrdersByUserId(req.user.id);
+
+      // 获取每个订单的详细信息
+      const ordersWithDetails = await Promise.all(
+        orders.map(async (order) => {
+          const orderItems = await storage.getOrderItems(order.id);
+          const payment = await storage.getPaymentByOrderId(order.id);
+
+          // 获取订单项的商品信息
+          const itemsWithDetails = await Promise.all(
+            orderItems.map(async (item) => {
+              const listing = await storage.getListing(item.listingId);
+              return {
+                ...item,
+                listing: listing ? {
+                  id: listing.id,
+                  title: listing.title,
+                  price: listing.price,
+                  type: listing.type,
+                  downloadUrl: listing.downloadUrl
+                } : null
+              };
+            })
+          );
+
+          return {
+            ...order,
+            items: itemsWithDetails,
+            payment
+          };
+        })
+      );
+
+      res.json(ordersWithDetails);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 支付API路由
+  // 创建支付
+  app.post("/api/payments", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      const { orderId, paymentMethod, amount, currency } = req.body;
+
+      if (!orderId || !paymentMethod || !amount) {
+        return res.status(400).json({ message: "缺少必要参数" });
+      }
+
+      // 获取订单信息
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "订单不存在" });
+      }
+
+      // 验证订单所有者
+      if (order.userId !== req.user.id) {
+        return res.status(403).json({ message: "权限不足" });
+      }
+
+      // 验证支付金额
+      if (order.totalAmount !== amount) {
+        return res.status(400).json({ message: "支付金额不匹配" });
+      }
+
+      // 创建支付记录
+      const payment = await storage.createPayment({
+        orderId,
+        amount,
+        currency: currency || "CNY",
+        paymentMethod,
+        status: PaymentStatus.PENDING,
+        transactionId: null
+      });
+
+      // 模拟支付处理
+      // 在真实应用中，这里应该调用支付网关API
+
+      // 更新支付状态为完成
+      const updatedPayment = await storage.updatePaymentStatus(
+        payment.id, 
+        PaymentStatus.COMPLETED,
+        `TRANS-${Date.now()}`
+      );
+
+      // 更新订单状态
+      const updatedOrder = await storage.updateOrderStatus(orderId, OrderStatus.PAID);
+
+      res.status(201).json({
+        payment: updatedPayment,
+        order: updatedOrder
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 获取支付详情
+  app.get("/api/payments/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      const paymentId = parseInt(req.params.id);
+      const payment = await storage.getPayment(paymentId);
+
+      if (!payment) {
+        return res.status(404).json({ message: "支付记录不存在" });
+      }
+
+      // 获取关联订单
+      const order = await storage.getOrder(payment.orderId);
+
+      // 验证支付所有者
+      if (order.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "权限不足" });
+      }
+
+      res.json(payment);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 用户保存的商品API路由
+  // 获取用户保存的商品
+  app.get("/api/users/favorites", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      const listings = await storage.getUserSavedListings(req.user.id);
+
+      // 获取每个商品的供应商信息
+      const listingsWithVendorInfo = await Promise.all(
+        listings.map(async (listing) => {
+          const vendor = await storage.getVendorProfile(listing.vendorId);
+          const user = vendor ? await storage.getUser(vendor.userId) : null;
+          
+          return {
+            ...listing,
+            vendor: vendor ? {
+              id: vendor.id,
+              companyName: vendor.companyName,
+              verificationStatus: vendor.verificationStatus,
+              user: user ? {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.avatar
+              } : null
+            } : null,
+            isSaved: true
+          };
+        })
+      );
+
+      res.json(listingsWithVendorInfo);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 保存商品
+  app.post("/api/users/favorites", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      const { listingId } = req.body;
+
+      if (!listingId) {
+        return res.status(400).json({ message: "缺少商品ID" });
+      }
+
+      // 检查商品是否存在
+      const listing = await storage.getListing(listingId);
+      if (!listing) {
+        return res.status(404).json({ message: "商品不存在" });
+      }
+
+      // 检查是否已收藏
+      const isSaved = await storage.isListingSavedByUser(req.user.id, listingId);
+      if (isSaved) {
+        return res.status(400).json({ message: "商品已收藏" });
+      }
+
+      // 保存商品
+      const savedListing = await storage.saveListingForUser({
+        userId: req.user.id,
+        listingId
+      });
+
+      res.status(201).json(savedListing);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 取消收藏商品
+  app.delete("/api/users/favorites/:id", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      const listingId = parseInt(req.params.id);
+
+      // 检查是否已收藏
+      const isSaved = await storage.isListingSavedByUser(req.user.id, listingId);
+      if (!isSaved) {
+        return res.status(400).json({ message: "商品未收藏" });
+      }
+
+      // 取消收藏
+      const result = await storage.removeSavedListing(req.user.id, listingId);
+
+      if (result) {
+        res.status(204).end();
+      } else {
+        res.status(500).json({ message: "操作失败" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

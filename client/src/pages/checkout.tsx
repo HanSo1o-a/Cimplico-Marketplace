@@ -45,11 +45,31 @@ const Checkout = () => {
     setIsProcessing(true);
     
     try {
-      // 在真实应用中，这里应该调用API提交订单
-      // const response = await apiRequest('POST', '/api/orders', { ... });
+      // 准备订单项数据
+      const orderItems = items.map(item => ({
+        listingId: item.listing.id,
+        quantity: item.quantity,
+        unitPrice: item.listing.price
+      }));
       
-      // 模拟API调用延迟
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // 创建订单
+      const orderResponse = await apiRequest('POST', '/api/orders', {
+        items: orderItems,
+        totalAmount: total,
+        currency: 'CNY'
+      });
+      
+      const order = await orderResponse.json();
+      
+      // 处理支付
+      const paymentResponse = await apiRequest('POST', '/api/payments', {
+        orderId: order.id,
+        amount: total,
+        currency: 'CNY',
+        paymentMethod: paymentMethod
+      });
+      
+      const paymentResult = await paymentResponse.json();
       
       toast({
         title: t("checkout.orderSuccess"),
@@ -62,7 +82,7 @@ const Checkout = () => {
       toast({
         variant: "destructive",
         title: t("checkout.orderFailed"),
-        description: t("checkout.orderError"),
+        description: error instanceof Error ? error.message : t("checkout.orderError"),
       });
     } finally {
       setIsProcessing(false);
@@ -173,12 +193,12 @@ const Checkout = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {items.map((item) => (
-                <div key={item.id} className="flex justify-between">
+                <div key={item.listing.id} className="flex justify-between">
                   <div>
-                    <span className="font-medium">{item.name}</span>
+                    <span className="font-medium">{item.listing.title}</span>
                     <span className="text-muted-foreground ml-2">x{item.quantity}</span>
                   </div>
-                  <span>{formatPrice(item.price * item.quantity)}</span>
+                  <span>{formatPrice(item.listing.price * item.quantity)}</span>
                 </div>
               ))}
               <Separator />
