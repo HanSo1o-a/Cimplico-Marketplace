@@ -15,6 +15,10 @@ import ProductDetail from "@/pages/product-detail";
 import UserProfile from "@/pages/user-profile";
 import VendorDashboard from "@/pages/vendor-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AdminHomePage from "@/pages/admin/AdminHomePage";
+import AdminProductsPage from "@/pages/admin/AdminProductsPage";
+import AdminVendorsPage from "@/pages/admin/AdminVendorsPage";
+import AdminOrdersPage from "@/pages/admin/AdminOrdersPage";
 import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
 import OrderDetail from "@/pages/order-detail";
@@ -29,6 +33,11 @@ function Router() {
       <Route path="/product/:id" component={ProductDetail} />
       <ProtectedRoute path="/profile" component={UserProfile} />
       <ProtectedRoute path="/vendor-dashboard" role={UserRole.VENDOR} component={VendorDashboard} />
+      {/* 管理员路由 */}
+      <ProtectedRoute path="/admin" role={UserRole.ADMIN} component={AdminHomePage} />
+      <ProtectedRoute path="/admin/products" role={UserRole.ADMIN} component={AdminProductsPage} />
+      <ProtectedRoute path="/admin/vendors" role={UserRole.ADMIN} component={AdminVendorsPage} />
+      <ProtectedRoute path="/admin/orders" role={UserRole.ADMIN} component={AdminOrdersPage} />
       <ProtectedRoute path="/admin-dashboard" role={UserRole.ADMIN} component={AdminDashboard} />
       <ProtectedRoute path="/cart" component={Cart} />
       <ProtectedRoute path="/checkout" component={Checkout} />

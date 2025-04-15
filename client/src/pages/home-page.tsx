@@ -39,9 +39,6 @@ const HomePage = () => {
       {/* Verified Vendors Section */}
       <VerifiedVendors />
 
-      {/* Become a Vendor Section */}
-      <BecomeVendor />
-
       {/* Testimonials Section */}
       <Testimonials />
 
