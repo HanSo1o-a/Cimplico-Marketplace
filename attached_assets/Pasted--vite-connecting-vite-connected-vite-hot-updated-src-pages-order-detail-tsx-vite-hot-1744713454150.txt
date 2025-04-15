@@ -1,0 +1,27 @@
+[vite] connecting...
+[vite] connected.
+[vite] hot updated: /src/pages/order-detail.tsx
+[vite] hot updated: /src/index.css?v=6Jl5b5k-cfM20dBIx5rpY
+[vite] hot updated: /src/pages/order-detail.tsx
+[vite] hot updated: /src/index.css?v=6Jl5b5k-cfM20dBIx5rpY
+Cannot read properties of undefined (reading 'price')
+Cannot read properties of undefined (reading 'price')
+The above error occurred in the <Cart> component:
+
+    at Cart (https://0d50a283-a9b9-48d3-a415-369212441187-00-29599vd6sh61b.riker.replit.dev/src/pages/cart.tsx:28:17)
+    at Route (https://0d50a283-a9b9-48d3-a415-369212441187-00-29599vd6sh61b.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=e018418e:323:16)
+    at ProtectedRoute (https://0d50a283-a9b9-48d3-a415-369212441187-00-29599vd6sh61b.riker.replit.dev/src/lib/protected-route.tsx:24:3)
+    at Switch (https://0d50a283-a9b9-48d3-a415-369212441187-00-29599vd6sh61b.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=e018418e:379:17)
+    at Router
+    at main
+    at div
+    at MainLayout (https://0d50a283-a9b9-48d3-a415-369212441187-00-29599vd6sh61b.riker.replit.dev/src/components/layout/MainLayout.tsx:24:23)
+    at Auth0Provider (https://0d50a283-a9b9-48d3-a415-369212441187-00-29599vd6sh61b.riker.replit.dev/src/hooks/use-auth0.tsx:23:33)
+    at AuthProvider (https://0d50a283-a9b9-48d3-a415-369212441187-00-29599vd6sh61b.riker.replit.dev/src/hooks/use-auth.tsx:27:32)
+    at QueryClientProvider (https://0d50a283-a9b9-48d3-a415-369212441187-00-29599vd6sh61b.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=e018418e:2805:3)
+    at App
+    at I18nextProvider (https://0d50a283-a9b9-48d3-a415-369212441187-00-29599vd6sh61b.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-i18next.js?v=e018418e:781:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+Cannot read properties of undefined (reading 'price')
