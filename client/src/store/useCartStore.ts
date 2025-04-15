@@ -3,12 +3,15 @@ import { persist } from "zustand/middleware";
 
 // 购物车项类型
 export interface CartItem {
-  id: number;
-  title: string;
-  price: number;
-  type: string;
-  image: string | null;
   quantity: number;
+  listing: {
+    id: number;
+    title: string;
+    price: number;
+    type: string;
+    image?: string | null;
+    description?: string;
+  }
 }
 
 // 购物车状态类型
@@ -42,7 +45,7 @@ export const useCartStore = create<CartState>()(
       
       addItem: (item) => {
         const { items } = get();
-        const existingItemIndex = items.findIndex((i) => i.id === item.id);
+        const existingItemIndex = items.findIndex((i) => i.listing.id === item.listing.id);
 
         if (existingItemIndex >= 0) {
           // 如果商品已存在，更新数量
@@ -60,17 +63,17 @@ export const useCartStore = create<CartState>()(
       
       removeItem: (id) => {
         const { items } = get();
-        set({ items: items.filter((item) => item.id !== id) });
+        set({ items: items.filter((item) => item.listing.id !== id) });
       },
       
       updateQuantity: (id, quantity) => {
         const { items } = get();
         if (quantity <= 0) {
-          set({ items: items.filter((item) => item.id !== id) });
+          set({ items: items.filter((item) => item.listing.id !== id) });
         } else {
           set({
             items: items.map((item) =>
-              item.id === id ? { ...item, quantity } : item
+              item.listing.id === id ? { ...item, quantity } : item
             ),
           });
         }
@@ -86,7 +89,7 @@ export const useCartStore = create<CartState>()(
       getTotalPrice: () => {
         const { items } = get();
         return items.reduce(
-          (total, item) => total + item.price * item.quantity,
+          (total, item) => total + item.listing.price * item.quantity,
           0
         );
       },

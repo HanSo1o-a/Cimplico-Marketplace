@@ -137,31 +137,34 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, hideActions = false 
 
   return (
     <Card 
-      className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
+      className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col relative group border border-transparent hover:border-primary/20 hover:translate-y-[-4px]"
       onClick={handleCardClick}
     >
-      <div className="aspect-video bg-muted/50 relative overflow-hidden">
+      <div className="aspect-video bg-gradient-to-br from-muted/30 to-muted/60 relative overflow-hidden">
         {product.images && product.images.length > 0 ? (
           <img
             src={product.images[0]}
             alt={product.title}
-            className="w-full h-full object-cover transition-transform hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-primary/10">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/20">
             {getTypeIcon()}
           </div>
         )}
         
+        {/* 图片蒙层效果 */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        
         {/* 标签 */}
-        <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
           {product.price === 0 && (
-            <Badge className="bg-green-500 hover:bg-green-600">
+            <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-sm text-white border-0">
               {t("product.free")}
             </Badge>
           )}
           {product.isFeatured && (
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="shadow-sm bg-gradient-to-r from-primary/70 to-primary border-0 text-white">
               {t("product.featured")}
             </Badge>
           )}
@@ -169,52 +172,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, hideActions = false 
 
         {/* 评分 */}
         {product.rating && (
-          <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs py-1 px-2 rounded-md flex items-center">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
-            <span>{product.rating.toFixed(1)}</span>
+          <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs py-1.5 px-2.5 rounded-full flex items-center shadow-sm">
+            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 mr-1" />
+            <span className="font-medium">{product.rating.toFixed(1)}</span>
           </div>
         )}
-      </div>
-
-      <CardContent className="p-4 flex-grow">
-        <div className="flex justify-between items-start mb-2">
-          <div className="text-sm font-medium text-muted-foreground flex items-center">
-            {getTypeIcon()}
-            <span className="ml-1">{t(`categories.${product.type || "other"}`)}</span>
-          </div>
-          {product.tags && product.tags.length > 0 && (
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Tag className="h-3 w-3 mr-1" />
-              <span>{product.tags[0]}</span>
-            </div>
-          )}
-        </div>
-
-        <h3 className="font-semibold mb-2 line-clamp-2">{product.title}</h3>
         
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-3">
-          {product.description}
-        </p>
-
-        {product.vendor && (
-          <div className="flex items-center mt-auto text-sm">
-            <CheckCircle className="h-3 w-3 text-primary mr-1" />
-            <span className="text-muted-foreground">{product.vendor.companyName}</span>
-          </div>
-        )}
-      </CardContent>
-
-      <CardFooter className="p-4 pt-0 mt-auto flex justify-between items-center">
-        <div className="font-semibold">
-          {formatPrice(product.price)}
-        </div>
-        
+        {/* 快速操作按钮 - 悬浮时显示 */}
         {!hideActions && (
-          <div className="flex gap-2">
+          <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-2">
             <Button
-              variant="outline"
-              size="sm"
-              className="flex-shrink-0"
+              variant="secondary"
+              size="icon"
+              className="h-8 w-8 rounded-full bg-white/90 backdrop-blur-sm text-gray-800 hover:bg-white shadow-md"
               onClick={(e) => {
                 e.stopPropagation();
                 handleSaveClick();
@@ -222,20 +192,60 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, hideActions = false 
               disabled={isLoading}
             >
               <Heart className={`h-4 w-4 ${isSaved ? "fill-red-500 text-red-500" : ""}`} />
-              <span className="sr-only">{t("product.save")}</span>
             </Button>
-            
+          </div>
+        )}
+      </div>
+
+      <CardContent className="p-5 flex-grow">
+        <div className="flex justify-between items-start mb-2.5">
+          <div className="text-sm font-medium text-primary/80 flex items-center bg-primary/5 px-2 py-1 rounded-full">
+            {getTypeIcon()}
+            <span className="ml-1.5">{t(`categories.${product.type || "other"}`)}</span>
+          </div>
+          {product.tags && product.tags.length > 0 && (
+            <div className="flex items-center text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
+              <Tag className="h-3 w-3 mr-1" />
+              <span>{product.tags[0]}</span>
+            </div>
+          )}
+        </div>
+
+        <h3 className="font-semibold text-lg mb-2.5 line-clamp-2 group-hover:text-primary transition-colors duration-300">{product.title}</h3>
+        
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+          {product.description}
+        </p>
+
+        {product.vendor && (
+          <div className="flex items-center mt-auto text-sm">
+            <CheckCircle className="h-3.5 w-3.5 text-primary mr-1.5" />
+            <span className="text-muted-foreground">{product.vendor.companyName}</span>
+          </div>
+        )}
+      </CardContent>
+
+      <CardFooter className="p-5 pt-0 mt-auto border-t border-muted/40">
+        <div className="w-full flex justify-between items-center">
+          <div className="font-bold text-lg bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
+            {formatPrice(product.price)}
+          </div>
+          
+          {!hideActions && (
             <Button
               variant={isInCart ? "default" : "outline"}
               size="sm"
-              className="flex-shrink-0"
-              onClick={handleAddToCart}
+              className={`flex-shrink-0 rounded-full px-4 ${isInCart ? 'bg-primary hover:bg-primary/90' : 'border-primary/30 hover:border-primary text-primary hover:bg-primary/10'}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToCart(e);
+              }}
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
               <span>{isInCart ? t("cart.viewCart") : t("cart.addToCart")}</span>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </CardFooter>
     </Card>
   );
