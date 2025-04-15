@@ -180,7 +180,19 @@ const ProductDetail = () => {
   // Add to cart
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product);
+      // 使用标准化的CartItem格式
+      addToCart({
+        quantity: 1,
+        listing: {
+          id: product.id,
+          title: product.title,
+          price: product.price,
+          type: product.type || "",
+          image: product.images && product.images.length > 0 ? product.images[0] : null,
+          description: product.description
+        }
+      });
+      
       toast({
         title: t("product.addedToCart"),
         description: product.title,

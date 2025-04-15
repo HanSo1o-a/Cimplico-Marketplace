@@ -138,13 +138,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
       return;
     }
     
+    // 添加到购物车，保持CartItem格式
     addToCart({
-      id: product.id,
-      title: product.title,
-      price: product.price,
-      type: product.type || "",
-      image: product.images && product.images.length > 0 ? product.images[0] : null,
-      quantity: 1
+      quantity: 1,
+      listing: {
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        type: product.type || "",
+        image: product.images && product.images.length > 0 ? product.images[0] : null,
+        description: product.description
+      }
     });
     
     toast({

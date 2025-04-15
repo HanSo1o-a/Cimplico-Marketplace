@@ -19,7 +19,7 @@ interface CartState {
   items: CartItem[];
   
   // 添加商品到购物车
-  addItem: (item: CartItem) => void;
+  addItem: (item: any) => void;
   
   // 从购物车移除商品
   removeItem: (id: number) => void;
@@ -45,19 +45,43 @@ export const useCartStore = create<CartState>()(
       
       addItem: (item) => {
         const { items } = get();
-        const existingItemIndex = items.findIndex((i) => i.listing.id === item.listing.id);
+        
+        // 标准化商品对象格式，统一转换为CartItem格式
+        let cartItem: CartItem;
+        
+        // 检查传入的item格式
+        if (item.listing) {
+          // 如果已经是CartItem格式
+          cartItem = item;
+        } else {
+          // 如果是Listing格式(从产品详情页添加)
+          cartItem = {
+            quantity: 1,
+            listing: {
+              id: item.id,
+              title: item.title,
+              price: item.price,
+              type: item.type || "",
+              image: item.images && item.images.length > 0 ? item.images[0] : null,
+              description: item.description
+            }
+          };
+        }
+        
+        // 检查商品是否已存在于购物车
+        const existingItemIndex = items.findIndex((i) => i.listing.id === cartItem.listing.id);
 
         if (existingItemIndex >= 0) {
           // 如果商品已存在，更新数量
           const updatedItems = [...items];
           updatedItems[existingItemIndex] = {
             ...updatedItems[existingItemIndex],
-            quantity: updatedItems[existingItemIndex].quantity + item.quantity,
+            quantity: updatedItems[existingItemIndex].quantity + cartItem.quantity,
           };
           set({ items: updatedItems });
         } else {
           // 如果商品不存在，添加到购物车
-          set({ items: [...items, item] });
+          set({ items: [...items, cartItem] });
         }
       },
       
