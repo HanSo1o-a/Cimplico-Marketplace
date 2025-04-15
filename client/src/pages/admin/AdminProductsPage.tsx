@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Clock } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Edit, CheckCircle, Clock, DollarSign, ShieldAlert, ShieldOff } from "lucide-react";
 
 const AdminProductsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -33,26 +34,27 @@ const AdminProductsPage: React.FC = () => {
   }, [user, navigate]);
 
   // 使用 react-query 获取待审核的商品列表
-  const { data: pendingListings, refetch } = useQuery({
+  const { data: pendingProducts, refetch: refetchPending } = useQuery({
     queryKey: ["/api/listings/pending"],
     enabled: !!user && user.role === UserRole.ADMIN,
   });
 
   // 使用 react-query 获取所有商品列表
-  const { data: allListings } = useQuery({
+  const { data: allProducts, refetch: refetchAll } = useQuery({
     queryKey: ["/api/listings/all"],
     enabled: !!user && user.role === UserRole.ADMIN,
   });
 
   // 审核操作
-  const handleApprove = async (listingId: number) => {
+  const handleApprove = async (productId: number) => {
     try {
-      await apiRequest("POST", `/api/listings/${listingId}/approve`, {});
+      await apiRequest("POST", `/api/listings/${productId}/approve`, {});
       toast({
         title: t("admin.productApproved"),
         description: t("admin.productApprovedDesc"),
       });
-      refetch();
+      refetchPending();
+      refetchAll();
     } catch (error) {
       toast({
         title: t("common.error"),
@@ -62,14 +64,15 @@ const AdminProductsPage: React.FC = () => {
     }
   };
 
-  const handleReject = async (listingId: number, reason: string) => {
+  const handleReject = async (productId: number, reason: string) => {
     try {
-      await apiRequest("POST", `/api/listings/${listingId}/reject`, { reason });
+      await apiRequest("POST", `/api/listings/${productId}/reject`, { reason });
       toast({
         title: t("admin.productRejected"),
         description: t("admin.productRejectedDesc"),
       });
-      refetch();
+      refetchPending();
+      refetchAll();
     } catch (error) {
       toast({
         title: t("common.error"),
@@ -90,7 +93,11 @@ const AdminProductsPage: React.FC = () => {
       case ListingStatus.ACTIVE:
         return <Badge variant="outline" className="bg-green-100 text-green-800"><CheckCircle className="mr-1 h-3 w-3" /> {t("product.active")}</Badge>;
       case ListingStatus.REJECTED:
-        return <Badge variant="outline" className="bg-red-100 text-red-800"><XCircle className="mr-1 h-3 w-3" /> {t("product.rejected")}</Badge>;
+        return <Badge variant="outline" className="bg-red-100 text-red-800"><ShieldOff className="mr-1 h-3 w-3" /> {t("product.rejected")}</Badge>;
+      case ListingStatus.DRAFT:
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800"><Edit className="mr-1 h-3 w-3" /> {t("product.draft")}</Badge>;
+      case ListingStatus.INACTIVE:
+        return <Badge variant="outline" className="bg-orange-100 text-orange-800"><ShieldAlert className="mr-1 h-3 w-3" /> {t("product.inactive")}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -112,37 +119,29 @@ const AdminProductsPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {pendingListings && pendingListings.length > 0 ? (
+              {pendingProducts && pendingProducts.length > 0 ? (
                 <div className="space-y-4">
-                  {pendingListings.map((listing: any) => (
-                    <Card key={listing.id} className="border-l-4 border-l-yellow-400">
+                  {pendingProducts.map((product: any) => (
+                    <Card key={product.id} className="border-l-4 border-l-yellow-400">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3">
-                              <h3 className="font-medium text-lg">{listing.title}</h3>
-                              {renderStatusBadge(listing.status)}
+                              <h3 className="font-medium text-lg">{product.title}</h3>
+                              {renderStatusBadge(product.status)}
                             </div>
-                            <p className="text-sm text-gray-500 mt-1">
-                              {t("product.vendor")}: {listing.vendor?.companyName}
-                            </p>
+                            <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                              <span><DollarSign className="inline h-3 w-3 mr-1" /> ¥{product.price?.toFixed(2)}</span>
+                              <span>{product.category}</span>
+                            </div>
                             <p className="text-sm mt-2 line-clamp-2">
-                              {listing.description}
+                              {product.description}
                             </p>
-                            <div className="mt-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => navigate(`/product/${listing.id}`)}
-                              >
-                                {t("common.view")}
-                              </Button>
-                            </div>
                           </div>
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() => handleApprove(listing.id)}
+                              onClick={() => handleApprove(product.id)}
                             >
                               {t("admin.approve")}
                             </Button>
@@ -152,11 +151,18 @@ const AdminProductsPage: React.FC = () => {
                               onClick={() => {
                                 const reason = prompt(t("admin.rejectReason"));
                                 if (reason) {
-                                  handleReject(listing.id, reason);
+                                  handleReject(product.id, reason);
                                 }
                               }}
                             >
                               {t("admin.reject")}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate(`/product/${product.id}`)}
+                            >
+                              {t("common.view")}
                             </Button>
                           </div>
                         </div>
@@ -179,32 +185,34 @@ const AdminProductsPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {allListings && allListings.length > 0 ? (
+            {allProducts && allProducts.length > 0 ? (
               <div className="space-y-4">
-                {allListings.map((listing: any) => (
-                  <Card key={listing.id}>
+                {allProducts.map((product: any) => (
+                  <Card key={product.id}>
                     <CardContent className="p-4">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-3">
-                            <h3 className="font-medium text-lg">{listing.title}</h3>
-                            {renderStatusBadge(listing.status)}
+                            <h3 className="font-medium text-lg">{product.title}</h3>
+                            {renderStatusBadge(product.status)}
                           </div>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {t("product.vendor")}: {listing.vendor?.companyName}
-                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                            <span><DollarSign className="inline h-3 w-3 mr-1" /> ¥{product.price?.toFixed(2)}</span>
+                            <span>{product.category}</span>
+                            <span>{product.createdAt ? format(new Date(product.createdAt), 'yyyy-MM-dd') : ''}</span>
+                          </div>
                           <p className="text-sm mt-2 line-clamp-2">
-                            {listing.description}
+                            {product.description}
                           </p>
-                          <div className="mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/product/${listing.id}`)}
-                            >
-                              {t("common.view")}
-                            </Button>
-                          </div>
+                        </div>
+                        <div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/product/${product.id}`)}
+                          >
+                            {t("common.view")}
+                          </Button>
                         </div>
                       </div>
                     </CardContent>

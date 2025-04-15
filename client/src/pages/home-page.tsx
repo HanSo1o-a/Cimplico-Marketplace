@@ -4,7 +4,6 @@ import Categories from "@/components/home/Categories";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import NewArrivals from "@/components/home/NewArrivals";
 import VerifiedVendors from "@/components/home/VerifiedVendors";
-import BecomeVendor from "@/components/home/BecomeVendor";
 import Testimonials from "@/components/home/Testimonials";
 import Features from "@/components/home/Features";
 import { Input } from "@/components/ui/input";
