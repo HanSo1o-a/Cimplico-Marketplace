@@ -110,9 +110,9 @@ const OrderDetail = () => {
           <CardContent className="flex items-center space-x-3">
             {renderStatusIcon(order.status)}
             <div>
-              <p className="font-medium">{t(`order.${order.status.toLowerCase()}`)}</p>
+              <p className="font-medium">{t(`order.status.${order.status}`)}</p>
               {order.status === OrderStatus.PAID && (
-                <p className="text-sm text-neutral-500">{t("order.statusDescription.paid")}</p>
+                <p className="text-sm text-neutral-500">{t("order.statusDescription.PAID")}</p>
               )}
             </div>
           </CardContent>
@@ -180,7 +180,7 @@ const OrderDetail = () => {
           {t("common.backToProfile")}
         </Button>
         
-        {order.status === OrderStatus.PAID && order.items && order.items.some(item => item.listing?.downloadUrl) && (
+        {(order.status === OrderStatus.SHIPPED || order.status === OrderStatus.COMPLETED) && order.items && order.items.some(item => item.listing?.downloadUrl) && (
           <Button>
             {t("order.downloadPurchase")}
             <Download className="ml-2 h-4 w-4" />
