@@ -17,6 +17,7 @@ import VendorDashboard from "@/pages/vendor-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
 import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
+import OrderDetail from "@/pages/order-detail";
 import MainLayout from "@/components/layout/MainLayout";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <ProtectedRoute path="/admin-dashboard" role={UserRole.ADMIN} component={AdminDashboard} />
       <ProtectedRoute path="/cart" component={Cart} />
       <ProtectedRoute path="/checkout" component={Checkout} />
+      <ProtectedRoute path="/orders/:id" component={OrderDetail} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { Steps, Step } from "@/components/ui/steps";
+import { Steps } from "@/components/ui/steps";
 
 const PaymentSuccess = ({ 
   orderId, 
@@ -208,11 +208,11 @@ const Checkout = () => {
           <CardTitle className="text-center">{t("checkout.processingPayment")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <Steps currentStep={paymentStep} className="pb-6">
-            <Step title={t("checkout.creatingOrder")} />
-            <Step title={t("checkout.processingPayment")} />
-            <Step title={t("checkout.confirmingOrder")} />
-          </Steps>
+          <Steps currentStep={paymentStep} steps={[
+            t("checkout.creatingOrder"),
+            t("checkout.processingPayment"),
+            t("checkout.confirmingOrder")
+          ]} className="pb-6" />
 
           {paymentStep === 1 && (
             <Alert>
