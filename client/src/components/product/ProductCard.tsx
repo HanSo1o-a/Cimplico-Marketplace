@@ -159,7 +159,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <Card 
-      className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer h-full flex flex-col relative group border border-transparent hover:border-primary/20 hover:translate-y-[-4px]"
+      className="overflow-hidden card-hover h-full flex flex-col relative group border border-transparent hover:border-primary/30 bg-white rounded-xl"
       onClick={handleCardClick}
     >
       <div className="aspect-video bg-gradient-to-br from-muted/30 to-muted/60 relative overflow-hidden">
@@ -249,21 +249,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
       <CardFooter className="p-5 pt-0 mt-auto border-t border-muted/40">
         <div className="w-full flex justify-between items-center">
-          <div className="font-bold text-lg bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
+          <div className="font-bold text-xl bg-gradient-to-br from-primary to-primary/80 bg-clip-text text-transparent shadow-text">
             {formatPrice(product.price)}
           </div>
           
           {!hideActions && (
             <Button
-              variant={isInCart ? "default" : "outline"}
+              variant={isInCart ? "primary" : "outline"}
               size="sm"
-              className={`flex-shrink-0 rounded-full px-4 ${isInCart ? 'bg-primary hover:bg-primary/90' : 'border-primary/30 hover:border-primary text-primary hover:bg-primary/10'}`}
+              className={`flex-shrink-0 rounded-full px-4 ${
+                isInCart 
+                  ? 'btn-highlight shadow-md' 
+                  : 'border-primary/30 hover:border-primary text-primary hover:bg-primary/10 hover:shadow-md'
+              }`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleAddToCart(e);
               }}
             >
-              <ShoppingCart className="h-4 w-4 mr-2" />
+              <ShoppingCart className={`${isInCart ? 'h-5 w-5' : 'h-4 w-4'} mr-2`} />
               <span>{isInCart ? t("cart.viewCart") : t("cart.addToCart")}</span>
             </Button>
           )}
