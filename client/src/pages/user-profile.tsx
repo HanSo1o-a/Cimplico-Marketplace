@@ -450,8 +450,19 @@ const UserProfile = () => {
                                     </div>
                                   </div>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right flex flex-col items-end">
                                   <div>¥{item.unitPrice.toFixed(2)}</div>
+                                  {item.listing?.downloadUrl && order.status === "PAID" && (
+                                    <Button 
+                                      variant="link" 
+                                      size="sm" 
+                                      className="text-primary flex items-center px-0 py-1"
+                                      onClick={() => window.open(item.listing.downloadUrl, "_blank")}
+                                    >
+                                      <Download className="mr-1 h-3 w-3" />
+                                      {t("order.download")}
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             ))}

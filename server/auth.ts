@@ -40,10 +40,29 @@ async function hashPassword(password: string) {
 
 // 密码比较函数
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  try {
+    const [hashed, salt] = stored.split(".");
+    
+    // 确保salt存在
+    if (!salt) {
+      console.error("密码格式错误：没有找到盐值");
+      return false;
+    }
+    
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    
+    // 确保两个缓冲区长度相同
+    if (hashedBuf.length !== suppliedBuf.length) {
+      console.error(`缓冲区长度不匹配: ${hashedBuf.length} vs ${suppliedBuf.length}`);
+      return false;
+    }
+    
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error("比较密码时发生错误:", error);
+    return false;
+  }
 }
 
 // 创建模拟Auth0元数据
