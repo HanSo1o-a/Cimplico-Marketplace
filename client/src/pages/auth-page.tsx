@@ -29,7 +29,14 @@ const AuthPage = () => {
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
-      navigate("/");
+      // 根据用户角色进行不同的重定向
+      if (user.role === UserRole.ADMIN) {
+        navigate("/admin"); // 管理员直接进入管理页面
+      } else if (user.role === UserRole.VENDOR) {
+        navigate("/vendor-dashboard"); // 供应商进入供应商控制台
+      } else {
+        navigate("/"); // 普通用户进入主页
+      }
     }
   }, [user, navigate]);
 
@@ -84,8 +91,15 @@ const AuthPage = () => {
   // Handle login submission
   const onLoginSubmit = (values: z.infer<typeof loginSchema>) => {
     loginMutation.mutate(values, {
-      onSuccess: () => {
-        navigate("/");
+      onSuccess: (user) => {
+        // 根据用户角色进行不同的重定向
+        if (user.role === UserRole.ADMIN) {
+          navigate("/admin"); // 管理员直接进入管理页面
+        } else if (user.role === UserRole.VENDOR) {
+          navigate("/vendor-dashboard"); // 供应商进入供应商控制台
+        } else {
+          navigate("/"); // 普通用户进入主页
+        }
       }
     });
   };

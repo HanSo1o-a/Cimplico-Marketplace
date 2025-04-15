@@ -1,8 +1,42 @@
-import * as React from "react"
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { Check } from "lucide-react"
+import * as React from "react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { Check } from "lucide-react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+
+interface CheckboxGroupProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function CheckboxGroup({ children, className }: CheckboxGroupProps) {
+  return (
+    <div className={cn("space-y-2", className)}>
+      {children}
+    </div>
+  );
+}
+
+interface CheckboxItemProps {
+  id: string;
+  label: string;
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+}
+
+export function CheckboxItem({ id, label, checked, onCheckedChange }: CheckboxItemProps) {
+  return (
+    <div className="flex items-start space-x-2">
+      <Checkbox id={id} checked={checked} onCheckedChange={onCheckedChange} />
+      <label
+        htmlFor={id}
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        {label}
+      </label>
+    </div>
+  );
+}
 
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
@@ -19,10 +53,10 @@ const Checkbox = React.forwardRef<
     <CheckboxPrimitive.Indicator
       className={cn("flex items-center justify-center text-current")}
     >
-      <Check className="h-4 w-4" />
+      <Check className="h-3 w-3" />
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
-))
-Checkbox.displayName = CheckboxPrimitive.Root.displayName
+));
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 
-export { Checkbox }
+export { Checkbox };
