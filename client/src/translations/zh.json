@@ -191,6 +191,7 @@
   "checkout": {
     "title": "结算",
     "orderSummary": "订单摘要",
+    "customerInfo": "客户信息",
     "billingDetails": "账单详情",
     "paymentMethod": "支付方式",
     "confirmOrder": "确认订单",
@@ -204,7 +205,39 @@
     "backToProducts": "返回商品",
     "creditCard": "信用卡",
     "alipay": "支付宝",
-    "wechatPay": "微信支付"
+    "wechatPay": "微信支付",
+    "firstName": "名",
+    "lastName": "姓",
+    "email": "电子邮箱",
+    "firstNamePlaceholder": "请输入您的名",
+    "lastNamePlaceholder": "请输入您的姓",
+    "emailPlaceholder": "请输入您的电子邮箱",
+    "cardNumber": "卡号",
+    "expiryDate": "有效期",
+    "cvv": "安全码",
+    "placeOrder": "提交订单",
+    "processing": "处理中...",
+    "emptyCart": "您的购物车是空的",
+    "browseProducts": "浏览商品",
+    "subtotal": "小计",
+    "tax": "税费",
+    "total": "总计",
+    "orderSuccess": "订单提交成功",
+    "orderFailed": "订单提交失败",
+    "orderError": "处理订单时发生错误",
+    "processingPayment": "正在处理支付",
+    "creatingOrder": "创建订单",
+    "preparingOrder": "正在准备您的订单，请稍候...",
+    "processingPaymentDescription": "正在处理您的支付，请勿关闭页面...",
+    "confirmingOrder": "确认订单",
+    "paymentComplete": "支付完成",
+    "paymentSuccessDescription": "您的支付已成功处理，正在准备订单...",
+    "doNotRefresh": "请勿刷新页面",
+    "continueShopping": "继续购物",
+    "viewOrder": "查看订单",
+    "testMode": "测试模式",
+    "testModeDescription": "这是模拟支付流程，不会产生实际交易。",
+    "orderProcess": "订单流程"
   },
   "order": {
     "status": "订单状态",
@@ -225,7 +258,23 @@
     "cancelOrder": "取消订单",
     "trackOrder": "追踪订单",
     "orderDetails": "订单详情",
-    "downloadPurchase": "下载购买商品"
+    "downloadPurchase": "下载购买商品",
+    "status": {
+      "CREATED": "已下单",
+      "PAID": "已支付",
+      "SHIPPED": "已发货",
+      "COMPLETED": "已完成",
+      "CANCELLED": "已取消",
+      "REFUNDED": "已退款"
+    },
+    "statusDescription": {
+      "CREATED": "订单已创建，等待支付",
+      "PAID": "订单已支付，等待处理",
+      "SHIPPED": "商品已发货，等待送达",
+      "COMPLETED": "订单已完成",
+      "CANCELLED": "订单已取消",
+      "REFUNDED": "订单已退款"
+    }
   },
   "footer": {
     "about": "关于我们",
