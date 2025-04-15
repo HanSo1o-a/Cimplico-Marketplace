@@ -148,7 +148,7 @@ const OrderDetail = () => {
                 <div className="flex-grow">
                   <div className="flex justify-between">
                     <h3 className="font-medium">{item.listing?.title}</h3>
-                    <p className="font-medium">¥{item.price.toFixed(2)}</p>
+                    <p className="font-medium">¥{item.unitPrice?.toFixed(2) || '0.00'}</p>
                   </div>
                   <div className="flex justify-between text-sm text-neutral-500 mt-1">
                     <p>{t("product.quantity")}: {item.quantity}</p>
