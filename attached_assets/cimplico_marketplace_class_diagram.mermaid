@@ -1,0 +1,232 @@
+classDiagram
+    class User {
+        +string id
+        +string email
+        +string password
+        +string firstName
+        +string lastName
+        +UserRole role
+        +UserStatus status
+        +string avatar
+        +string phone
+        +Date createdAt
+        +Date updatedAt
+        +register()
+        +login(email, password)
+        +updateProfile()
+        +saveProduct(listingId)
+        +createOrder()
+    }
+    
+    class VendorProfile {
+        +string id
+        +string userId
+        +string companyName
+        +string businessNumber
+        +string website
+        +string description
+        +VendorVerificationStatus verificationStatus
+        +string rejectionReason
+        +Date createdAt
+        +Date updatedAt
+        +submitForVerification()
+        +updateProfile()
+        +createListing()
+    }
+    
+    class Listing {
+        +string id
+        +string vendorId
+        +string title
+        +string description
+        +number price
+        +ListingType type
+        +ListingStatus status
+        +string[] images
+        +string category
+        +string[] tags
+        +string rejectionReason
+        +Date createdAt
+        +Date updatedAt
+        +create()
+        +update()
+        +submitForReview()
+        +approve()
+        +reject(reason)
+        +deactivate()
+    }
+    
+    class Firm {
+        +string id
+        +string name
+        +string description
+        +Date createdAt
+        +Date updatedAt
+        +addWhitelistedUser(userId)
+        +installListing(listingId)
+    }
+    
+    class FirmWhitelistedUser {
+        +string id
+        +string firmId
+        +string userId
+        +Date createdAt
+    }
+    
+    class InstalledListing {
+        +string id
+        +string firmId
+        +string listingId
+        +Date installedAt
+        +Date expiresAt
+    }
+    
+    class Order {
+        +string id
+        +string userId
+        +OrderStatus status
+        +number totalAmount
+        +string currency
+        +Date createdAt
+        +Date updatedAt
+        +create()
+        +updateStatus(status)
+        +cancel()
+        +complete()
+    }
+    
+    class OrderItem {
+        +string id
+        +string orderId
+        +string listingId
+        +number quantity
+        +number unitPrice
+    }
+    
+    class Payment {
+        +string id
+        +string orderId
+        +number amount
+        +string currency
+        +PaymentStatus status
+        +string paymentMethod
+        +string transactionId
+        +Date createdAt
+        +Date updatedAt
+        +processPayment()
+        +refund()
+    }
+    
+    class Comment {
+        +string id
+        +string userId
+        +string listingId
+        +string content
+        +number rating
+        +CommentStatus status
+        +Date createdAt
+        +Date updatedAt
+        +create()
+        +approve()
+        +reject()
+    }
+    
+    class UserSavedListing {
+        +string id
+        +string userId
+        +string listingId
+        +Date savedAt
+    }
+    
+    class AdminService {
+        +approveVendor(vendorId)
+        +rejectVendor(vendorId, reason)
+        +approveListing(listingId)
+        +rejectListing(listingId, reason)
+        +getStatistics()
+    }
+    
+    %% 关系定义
+    User "1" -- "0..1" VendorProfile : has
+    User "1" -- "*" UserSavedListing : saves
+    User "1" -- "*" FirmWhitelistedUser : authorized
+    User "1" -- "*" Order : places
+    User "1" -- "*" Comment : writes
+    
+    VendorProfile "1" -- "*" Listing : publishes
+    
+    Listing "1" -- "*" UserSavedListing : saved by
+    Listing "1" -- "*" InstalledListing : installed as
+    Listing "1" -- "*" OrderItem : ordered as
+    Listing "1" -- "*" Comment : receives
+    
+    Firm "1" -- "*" FirmWhitelistedUser : authorizes
+    Firm "1" -- "*" InstalledListing : installs
+    
+    Order "1" -- "*" OrderItem : contains
+    Order "1" -- "*" Payment : has
+    
+    %% 枚举类型
+    class UserRole {
+        <<enumeration>>
+        USER
+        VENDOR
+        ADMIN
+    }
+    
+    class UserStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+        SUSPENDED
+    }
+    
+    class VendorVerificationStatus {
+        <<enumeration>>
+        PENDING
+        APPROVED
+        REJECTED
+    }
+    
+    class ListingStatus {
+        <<enumeration>>
+        DRAFT
+        PENDING
+        ACTIVE
+        REJECTED
+        INACTIVE
+    }
+    
+    class ListingType {
+        <<enumeration>>
+        PRODUCT
+        SERVICE
+        DIGITAL
+    }
+    
+    class OrderStatus {
+        <<enumeration>>
+        CREATED
+        PAID
+        PROCESSING
+        SHIPPED
+        DELIVERED
+        COMPLETED
+        CANCELLED
+        REFUNDED
+    }
+    
+    class PaymentStatus {
+        <<enumeration>>
+        PENDING
+        COMPLETED
+        FAILED
+        REFUNDED
+    }
+    
+    class CommentStatus {
+        <<enumeration>>
+        PENDING
+        APPROVED
+        REJECTED
+    }
