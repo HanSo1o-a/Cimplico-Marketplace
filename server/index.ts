@@ -64,8 +64,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Try a different port if 5000 is occupied
-  const port = 8080;
+  // 使用端口5000以匹配工作流配置
+  const port = 5000;
   server.listen({
     port,
     host: "0.0.0.0",
