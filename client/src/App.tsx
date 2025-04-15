@@ -25,7 +25,7 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/marketplace" component={Marketplace} />
-      <Route path="/products/:id" component={ProductDetail} />
+      <Route path="/product/:id" component={ProductDetail} />
       <ProtectedRoute path="/profile" component={UserProfile} />
       <ProtectedRoute path="/vendor-dashboard" role={UserRole.VENDOR} component={VendorDashboard} />
       <ProtectedRoute path="/admin-dashboard" role={UserRole.ADMIN} component={AdminDashboard} />
