@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import { X, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 
 const HomePage = () => {
   const { t } = useTranslation();
@@ -30,15 +31,10 @@ const HomePage = () => {
     setActiveFilters(activeFilters.filter(f => f !== filter));
   };
 
-  // 模拟产品数据
-  const products = [
-    { id: 1, title: t("product.title1"), price: 20.00, options: 2 },
-    { id: 2, title: t("product.title2"), price: 32.00, options: 2 },
-    { id: 3, title: t("product.title3"), price: 56.00, options: 2 },
-    { id: 4, title: t("product.title4"), price: 56.00, options: 2 },
-    { id: 5, title: t("product.title5"), price: 152.00, options: 2 },
-    { id: 6, title: t("product.title6"), price: 152.00, options: 2 },
-  ];
+  // 从API获取商品数据
+  const { data: products = [], isLoading } = useQuery<any[]>({
+    queryKey: ['/api/listings'],
+  });
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -197,32 +193,54 @@ const HomePage = () => {
 
             {/* Products Grid */}
             <div className="flex-1">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map(product => (
-                  <Card key={product.id} className="border overflow-hidden hover:shadow-md transition-shadow">
-                    <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                      <div className="w-full h-full flex items-center justify-center border-b">
-                        <img
-                          src={`/placeholder-product-${product.id}.svg`}
-                          alt={product.title}
-                          className="max-w-full max-h-full object-contain"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "/placeholder-product.svg";
-                          }}
-                        />
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <Card key={index} className="border overflow-hidden animate-pulse">
+                      <div className="aspect-square bg-gray-200"></div>
+                      <CardContent className="p-4">
+                        <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div className="flex justify-between items-center">
+                          <div className="h-5 bg-gray-200 rounded w-1/4"></div>
+                          <div className="h-4 bg-gray-200 rounded w-1/5"></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.isArray(products) && products.map((product: any) => (
+                    <Card key={product.id} className="border overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onClick={() => setLocation(`/product/${product.id}`)}>
+                      <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                        <div className="w-full h-full flex items-center justify-center border-b">
+                          <img
+                            src={product.imageUrl || `/placeholder-product-${product.id % 6 + 1}.svg`}
+                            alt={product.title}
+                            className="max-w-full max-h-full object-contain"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/placeholder-product.svg";
+                            }}
+                          />
+                        </div>
                       </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-medium text-lg mb-1">{product.title}</h3>
+                        <div className="flex justify-between items-center">
+                          <p className="font-bold text-lg">${Number(product.price).toFixed(2)}</p>
+                          <p className="text-sm text-gray-500">{product.category}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {Array.isArray(products) && products.length === 0 && !isLoading && (
+                    <div className="col-span-3 py-12 text-center">
+                      <p className="text-lg text-gray-500">{t("listings.noProducts")}</p>
                     </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-medium text-lg mb-1">{product.title}</h3>
-                      <div className="flex justify-between items-center">
-                        <p className="font-bold text-lg">${product.price.toFixed(2)}</p>
-                        <p className="text-sm text-gray-500">{product.options} {t("product.colorOptions")}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
