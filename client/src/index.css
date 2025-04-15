@@ -8,6 +8,18 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground bg-slate-50;
+  }
+
+  .bg-gradient-page {
+    @apply bg-gradient-to-b from-blue-50 to-slate-100;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .btn-highlight {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-primary-400;
   }
 }

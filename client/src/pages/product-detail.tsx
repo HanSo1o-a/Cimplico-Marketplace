@@ -461,8 +461,9 @@ const ProductDetail = () => {
                   size="lg"
                   variant="primary" 
                   onClick={handleAddToCart}
+                  className="bg-primary-600 hover:bg-primary-800 text-white font-bold py-3 px-8 shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-primary-400"
                 >
-                  <ShoppingCart className="h-5 w-5" />
+                  <ShoppingCart className="h-6 w-6 mr-2" />
                   {t("common.addToCart")}
                 </Button>
               )}

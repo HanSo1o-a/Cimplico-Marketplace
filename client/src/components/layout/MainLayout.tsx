@@ -45,10 +45,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-neutral-50">
+    <div className="flex flex-col min-h-screen bg-gradient-page">
       <Header />
       
-      <main className="flex-grow">
+      <main className="flex-grow pt-4">
         {children}
       </main>
       
@@ -57,9 +57,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       {/* Back to top button */}
       <Button
         id="back-to-top"
-        variant="default"
+        variant="primary"
         size="icon"
-        className="fixed bottom-6 right-6 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg opacity-0 invisible transition-all z-50"
+        className="fixed bottom-6 right-6 text-white rounded-full shadow-lg opacity-0 invisible transition-all z-50"
         onClick={scrollToTop}
       >
         <ChevronUp className="h-5 w-5" />
