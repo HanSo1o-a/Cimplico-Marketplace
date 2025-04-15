@@ -288,7 +288,7 @@ const ProductDetail = () => {
     );
   }
 
-  const isFree = product.price === 0;
+  const isFree = product && product.price === 0;
   const images = product.images as string[];
   const activeImage = images && images.length > 0 ? images[activeImageIndex] : null;
   const tags = product.tags as string[];
@@ -458,22 +458,22 @@ const ProductDetail = () => {
             <div className="flex flex-wrap gap-4">
               {!isFree && (
                 <Button 
-                  size="lg" 
-                  onClick={handleAddToCart} 
-                  className="bg-primary-600 hover:bg-primary-700"
+                  size="lg"
+                  variant="primary" 
+                  onClick={handleAddToCart}
                 >
-                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  <ShoppingCart className="h-5 w-5" />
                   {t("common.addToCart")}
                 </Button>
               )}
               
               {isFree && product.downloadUrl && (
                 <Button 
-                  size="lg" 
-                  className="bg-secondary-600 hover:bg-secondary-700"
+                  size="lg"
+                  variant="success" 
                   onClick={() => window.open(product.downloadUrl, '_blank')}
                 >
-                  <Download className="mr-2 h-5 w-5" />
+                  <Download className="h-5 w-5" />
                   {t("common.download")}
                 </Button>
               )}
@@ -481,11 +481,11 @@ const ProductDetail = () => {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className={`${product.isSaved ? 'text-red-500' : ''}`}
+                className={product.isSaved ? 'text-red-500 hover:bg-red-50' : ''}
                 onClick={toggleSave}
                 disabled={isSaving}
               >
-                <Heart className={`mr-2 h-5 w-5 ${product.isSaved ? 'fill-red-500' : ''}`} />
+                <Heart className={`h-5 w-5 ${product.isSaved ? 'fill-red-500' : ''}`} />
                 {product.isSaved ? t("product.saved") : t("product.save")}
               </Button>
             </div>
