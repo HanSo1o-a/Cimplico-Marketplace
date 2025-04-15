@@ -1,0 +1,809 @@
+import { useState, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
+import { useTranslation } from "react-i18next";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Listing, Order, VendorVerificationStatus } from "@shared/schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VendorForm from "@/components/vendor/VendorForm";
+import ProductForm from "@/components/vendor/ProductForm";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { 
+  Avatar, 
+  AvatarFallback, 
+  AvatarImage 
+} from "@/components/ui/avatar";
+import {
+  LayoutDashboard,
+  Package,
+  ClipboardList,
+  Settings,
+  Plus,
+  Search,
+  FileText,
+  Edit,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  BarChart3,
+  ChevronRight
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+
+const VendorDashboard = () => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const tabParam = params.get("tab");
+  
+  const { user, vendorProfile } = useAuth();
+  const [activeTab, setActiveTab] = useState<string>(tabParam || "dashboard");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showAddProductForm, setShowAddProductForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Listing | null>(null);
+  const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
+
+  // Redirect if not logged in or not a vendor
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    } else if (user.role !== "VENDOR") {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  // Update URL when tab changes
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    navigate(`/vendor-dashboard?tab=${tab}`, { replace: true });
+  };
+
+  // Fetch vendor products
+  const { data: products, isLoading: productsLoading, refetch: refetchProducts } = useQuery<Listing[]>({
+    queryKey: ["/api/vendors", vendorProfile?.id, "listings"],
+    enabled: !!vendorProfile && activeTab === "products",
+  });
+
+  // Fetch vendor orders
+  const { data: orders, isLoading: ordersLoading, refetch: refetchOrders } = useQuery<Order[]>({
+    queryKey: ["/api/vendors", vendorProfile?.id, "orders"],
+    enabled: !!vendorProfile && activeTab === "orders",
+  });
+
+  // Delete product mutation
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/vendors/${vendorProfile?.id}/listings/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: t("vendor.productDeleted"),
+      });
+      setDeletingProductId(null);
+      refetchProducts();
+    },
+    onError: (error) => {
+      toast({
+        title: t("vendor.deleteFailed"),
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Filter products based on search and status
+  const filteredProducts = products ? products.filter(product => {
+    const matchesSearch = searchQuery 
+      ? product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+    
+    const matchesStatus = statusFilter === "all" 
+      ? true 
+      : product.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  }) : [];
+
+  // Handle product deletion
+  const handleDeleteProduct = () => {
+    if (deletingProductId) {
+      deleteProductMutation.mutate(deletingProductId);
+    }
+  };
+
+  // Check if vendor is approved
+  const isVendorApproved = vendorProfile?.verificationStatus === VendorVerificationStatus.APPROVED;
+
+  if (!user || !vendorProfile) {
+    return null; // Will be redirected by the useEffect
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Sidebar */}
+        <div className="md:w-1/4 lg:w-1/5">
+          <Card className="sticky top-24">
+            <CardHeader>
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={user.avatar || undefined} />
+                  <AvatarFallback className="bg-primary-100 text-primary-700">
+                    {vendorProfile.companyName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle>{vendorProfile.companyName}</CardTitle>
+                  <CardDescription className="flex items-center">
+                    {vendorProfile.verificationStatus === VendorVerificationStatus.APPROVED ? (
+                      <>
+                        <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
+                        <span className="text-green-600">{t("vendor.approved")}</span>
+                      </>
+                    ) : vendorProfile.verificationStatus === VendorVerificationStatus.PENDING ? (
+                      <>
+                        <Clock className="h-3 w-3 text-yellow-500 mr-1" />
+                        <span className="text-yellow-600">{t("vendor.pending")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-3 w-3 text-red-500 mr-1" />
+                        <span className="text-red-600">{t("vendor.rejected")}</span>
+                      </>
+                    )}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <nav className="space-y-1">
+                <Button
+                  variant={activeTab === "dashboard" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => handleTabChange("dashboard")}
+                >
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  {t("vendor.dashboard")}
+                </Button>
+                <Button
+                  variant={activeTab === "products" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => handleTabChange("products")}
+                  disabled={!isVendorApproved}
+                >
+                  <Package className="mr-2 h-4 w-4" />
+                  {t("vendor.products")}
+                </Button>
+                <Button
+                  variant={activeTab === "orders" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => handleTabChange("orders")}
+                  disabled={!isVendorApproved}
+                >
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  {t("vendor.orders")}
+                </Button>
+                <Button
+                  variant={activeTab === "profile" ? "default" : "ghost"}
+                  className="w-full justify-start"
+                  onClick={() => handleTabChange("profile")}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  {t("vendor.profile")}
+                </Button>
+              </nav>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="md:w-3/4 lg:w-4/5">
+          {/* Dashboard Tab */}
+          {activeTab === "dashboard" && (
+            <div className="space-y-6">
+              {/* Status Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("vendor.accountStatus")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {vendorProfile.verificationStatus === VendorVerificationStatus.APPROVED ? (
+                    <Alert className="bg-green-50 border-green-200">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <AlertTitle className="text-green-700">{t("vendor.verificationApproved")}</AlertTitle>
+                      <AlertDescription className="text-green-600">
+                        {t("vendor.canSellProducts")}
+                      </AlertDescription>
+                    </Alert>
+                  ) : vendorProfile.verificationStatus === VendorVerificationStatus.PENDING ? (
+                    <Alert className="bg-yellow-50 border-yellow-200">
+                      <Clock className="h-4 w-4 text-yellow-500" />
+                      <AlertTitle className="text-yellow-700">{t("vendor.pending")}</AlertTitle>
+                      <AlertDescription className="text-yellow-600">
+                        {t("vendor.awaitingVerification")}
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <Alert className="bg-red-50 border-red-200">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      <AlertTitle className="text-red-700">{t("vendor.rejected")}</AlertTitle>
+                      <AlertDescription className="text-red-600">
+                        {t("vendor.reason")}: {vendorProfile.rejectionReason || t("vendor.noReasonProvided")}
+                      </AlertDescription>
+                      <Button 
+                        className="mt-3"
+                        onClick={() => handleTabChange("profile")}
+                      >
+                        {t("vendor.updateAndResubmit")}
+                      </Button>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>{t("vendor.totalProducts")}</CardDescription>
+                    <CardTitle className="text-3xl">{products?.length || 0}</CardTitle>
+                  </CardHeader>
+                  <CardFooter>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs p-0 h-auto"
+                      onClick={() => handleTabChange("products")}
+                      disabled={!isVendorApproved}
+                    >
+                      {t("vendor.viewProducts")}
+                      <ChevronRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>{t("vendor.totalOrders")}</CardDescription>
+                    <CardTitle className="text-3xl">{orders?.length || 0}</CardTitle>
+                  </CardHeader>
+                  <CardFooter>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs p-0 h-auto"
+                      onClick={() => handleTabChange("orders")}
+                      disabled={!isVendorApproved}
+                    >
+                      {t("vendor.viewOrders")}
+                      <ChevronRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>{t("vendor.totalRevenue")}</CardDescription>
+                    <CardTitle className="text-3xl">
+                      ¥{orders?.reduce((sum, order) => {
+                        // Calculate the total for items belonging to this vendor
+                        const vendorItems = order.items?.filter(item => 
+                          products?.some(p => p.id === item.listingId)
+                        ) || [];
+                        
+                        return sum + vendorItems.reduce((itemSum, item) => 
+                          itemSum + (item.unitPrice * item.quantity), 0
+                        );
+                      }, 0).toFixed(2) || "0.00"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardFooter>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-xs p-0 h-auto"
+                      onClick={() => handleTabChange("orders")}
+                      disabled={!isVendorApproved}
+                    >
+                      {t("vendor.viewSales")}
+                      <ChevronRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </div>
+
+              {/* Recent Activity */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("vendor.recentActivity")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {orders && orders.length > 0 ? (
+                    <div className="space-y-4">
+                      {orders.slice(0, 5).map((order) => (
+                        <div key={order.id} className="flex items-center justify-between border-b border-neutral-100 pb-4">
+                          <div className="flex items-center">
+                            <div className="bg-primary-100 p-2 rounded-full mr-3">
+                              <FileText className="h-5 w-5 text-primary-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium">{t("order.number")}: #{order.id}</div>
+                              <div className="text-sm text-neutral-500">
+                                {new Date(order.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                          <div>
+                            <span 
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                order.status === "PAID" ? "bg-green-100 text-green-800" :
+                                order.status === "COMPLETED" ? "bg-blue-100 text-blue-800" :
+                                order.status === "CANCELLED" ? "bg-red-100 text-red-800" :
+                                "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {t(`order.${order.status.toLowerCase()}`)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-neutral-500">
+                      {t("vendor.noRecentActivity")}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Products Tab */}
+          {activeTab === "products" && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <h1 className="text-3xl font-bold">{t("vendor.products")}</h1>
+                
+                <Button 
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setShowAddProductForm(true);
+                  }}
+                  disabled={!isVendorApproved}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("vendor.addProduct")}
+                </Button>
+              </div>
+
+              {!isVendorApproved ? (
+                <Alert className="bg-yellow-50 border-yellow-200">
+                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                  <AlertTitle className="text-yellow-700">{t("vendor.cannotManageProducts")}</AlertTitle>
+                  <AlertDescription className="text-yellow-600">
+                    {t("vendor.needApprovalForProducts")}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <>
+                  {/* Filters */}
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-grow relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                          <Input
+                            placeholder={t("vendor.searchProducts")}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                        
+                        <Select
+                          value={statusFilter}
+                          onValueChange={setStatusFilter}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue placeholder={t("product.status")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">{t("vendor.allStatuses")}</SelectItem>
+                            <SelectItem value="DRAFT">{t("product.draft")}</SelectItem>
+                            <SelectItem value="PENDING">{t("product.pending")}</SelectItem>
+                            <SelectItem value="ACTIVE">{t("product.active")}</SelectItem>
+                            <SelectItem value="REJECTED">{t("product.rejected")}</SelectItem>
+                            <SelectItem value="INACTIVE">{t("product.inactive")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Products Table */}
+                  <Card>
+                    <CardContent className="p-0">
+                      {productsLoading ? (
+                        <div className="p-8 text-center">
+                          <svg className="animate-spin h-8 w-8 text-primary-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        </div>
+                      ) : filteredProducts.length > 0 ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>{t("product.title")}</TableHead>
+                              <TableHead>{t("product.price")}</TableHead>
+                              <TableHead>{t("product.status")}</TableHead>
+                              <TableHead>{t("product.category")}</TableHead>
+                              <TableHead>{t("common.actions")}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredProducts.map((product) => (
+                              <TableRow key={product.id}>
+                                <TableCell className="font-medium">
+                                  <div className="flex items-center">
+                                    {product.images && product.images.length > 0 && (
+                                      <div className="h-10 w-10 rounded overflow-hidden mr-3">
+                                        <img 
+                                          src={product.images[0] as string} 
+                                          alt={product.title} 
+                                          className="h-full w-full object-cover"
+                                        />
+                                      </div>
+                                    )}
+                                    <div>
+                                      <div>{product.title}</div>
+                                      <div className="text-xs text-neutral-500">ID: {product.id}</div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {product.price === 0 
+                                    ? t("product.free") 
+                                    : `¥${product.price.toFixed(2)}`}
+                                </TableCell>
+                                <TableCell>
+                                  <span 
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      product.status === "ACTIVE" ? "bg-green-100 text-green-800" :
+                                      product.status === "PENDING" ? "bg-yellow-100 text-yellow-800" :
+                                      product.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                      product.status === "DRAFT" ? "bg-blue-100 text-blue-800" :
+                                      "bg-neutral-100 text-neutral-800"
+                                    }`}
+                                  >
+                                    {t(`product.${product.status.toLowerCase()}`)}
+                                  </span>
+                                </TableCell>
+                                <TableCell>{product.category}</TableCell>
+                                <TableCell>
+                                  <div className="flex">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => {
+                                        setEditingProduct(product);
+                                        setShowAddProductForm(true);
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                      <span className="sr-only">{t("common.edit")}</span>
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      onClick={() => setDeletingProductId(product.id)}
+                                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span className="sr-only">{t("common.delete")}</span>
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <div className="p-8 text-center text-neutral-500">
+                          {searchQuery 
+                            ? t("vendor.noMatchingProducts") 
+                            : t("vendor.noProducts")}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+
+              {/* Add/Edit Product Modal */}
+              <Dialog 
+                open={showAddProductForm}
+                onOpenChange={(open) => {
+                  setShowAddProductForm(open);
+                  if (!open) setEditingProduct(null);
+                }}
+              >
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingProduct ? t("vendor.editProduct") : t("vendor.addProduct")}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <ProductForm 
+                    vendorId={vendorProfile.id}
+                    product={editingProduct}
+                    onSuccess={() => {
+                      setShowAddProductForm(false);
+                      refetchProducts();
+                    }}
+                  />
+                </DialogContent>
+              </Dialog>
+
+              {/* Delete Confirmation Dialog */}
+              <Dialog 
+                open={deletingProductId !== null}
+                onOpenChange={(open) => {
+                  if (!open) setDeletingProductId(null);
+                }}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t("vendor.confirmDelete")}</DialogTitle>
+                    <DialogDescription>
+                      {t("vendor.deleteWarning")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="outline">{t("common.cancel")}</Button>
+                    </DialogClose>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleDeleteProduct}
+                      disabled={deleteProductMutation.isPending}
+                    >
+                      {deleteProductMutation.isPending 
+                        ? t("common.loading") 
+                        : t("common.delete")}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+
+          {/* Orders Tab */}
+          {activeTab === "orders" && (
+            <div className="space-y-6">
+              <h1 className="text-3xl font-bold mb-6">{t("vendor.orders")}</h1>
+
+              {!isVendorApproved ? (
+                <Alert className="bg-yellow-50 border-yellow-200">
+                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                  <AlertTitle className="text-yellow-700">{t("vendor.cannotManageOrders")}</AlertTitle>
+                  <AlertDescription className="text-yellow-600">
+                    {t("vendor.needApprovalForOrders")}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Card>
+                  <CardContent className="p-0">
+                    {ordersLoading ? (
+                      <div className="p-8 text-center">
+                        <svg className="animate-spin h-8 w-8 text-primary-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                    ) : orders && orders.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{t("order.number")}</TableHead>
+                            <TableHead>{t("order.date")}</TableHead>
+                            <TableHead>{t("order.customer")}</TableHead>
+                            <TableHead>{t("order.items")}</TableHead>
+                            <TableHead>{t("order.total")}</TableHead>
+                            <TableHead>{t("order.status")}</TableHead>
+                            <TableHead>{t("common.actions")}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {orders.map((order) => {
+                            // Calculate total for items belonging to this vendor
+                            const vendorItems = order.items?.filter(item => 
+                              products?.some(p => p.id === item.listingId)
+                            ) || [];
+                            
+                            const orderTotal = vendorItems.reduce((sum, item) => 
+                              sum + (item.unitPrice * item.quantity), 0
+                            );
+
+                            return (
+                              <TableRow key={order.id}>
+                                <TableCell className="font-medium">
+                                  #{order.id}
+                                </TableCell>
+                                <TableCell>
+                                  {new Date(order.createdAt).toLocaleDateString()}
+                                </TableCell>
+                                <TableCell>
+                                  {order.user?.firstName} {order.user?.lastName}
+                                </TableCell>
+                                <TableCell>
+                                  {vendorItems.length} {t("product.items")}
+                                </TableCell>
+                                <TableCell>
+                                  ¥{orderTotal.toFixed(2)}
+                                </TableCell>
+                                <TableCell>
+                                  <span 
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                      order.status === "PAID" ? "bg-green-100 text-green-800" :
+                                      order.status === "COMPLETED" ? "bg-blue-100 text-blue-800" :
+                                      order.status === "CANCELLED" ? "bg-red-100 text-red-800" :
+                                      "bg-yellow-100 text-yellow-800"
+                                    }`}
+                                  >
+                                    {t(`order.${order.status.toLowerCase()}`)}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm">
+                                        {t("common.actions")}
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem 
+                                        onClick={() => {
+                                          // Would navigate to order details in real implementation
+                                          toast({
+                                            title: t("vendor.viewingOrder"),
+                                            description: `Order #${order.id}`,
+                                          });
+                                        }}
+                                      >
+                                        {t("order.viewDetails")}
+                                      </DropdownMenuItem>
+                                      
+                                      {/* Update status options based on current status */}
+                                      {order.status === "PAID" && (
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            // Would update order status in real implementation
+                                            toast({
+                                              title: t("vendor.orderMarkedShipped"),
+                                              description: `Order #${order.id}`,
+                                            });
+                                          }}
+                                        >
+                                          {t("order.markShipped")}
+                                        </DropdownMenuItem>
+                                      )}
+                                      
+                                      {order.status === "SHIPPED" && (
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            // Would update order status in real implementation
+                                            toast({
+                                              title: t("vendor.orderMarkedDelivered"),
+                                              description: `Order #${order.id}`,
+                                            });
+                                          }}
+                                        >
+                                          {t("order.markDelivered")}
+                                        </DropdownMenuItem>
+                                      )}
+                                      
+                                      {order.status !== "COMPLETED" && order.status !== "CANCELLED" && (
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            // Would update order status in real implementation
+                                            toast({
+                                              title: t("vendor.orderMarkedCompleted"),
+                                              description: `Order #${order.id}`,
+                                            });
+                                          }}
+                                        >
+                                          {t("order.markCompleted")}
+                                        </DropdownMenuItem>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="p-8 text-center text-neutral-500">
+                        {t("vendor.noOrders")}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Profile Tab */}
+          {activeTab === "profile" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("vendor.profile")}</CardTitle>
+                <CardDescription>
+                  {t("vendor.profileDescription")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <VendorForm 
+                  vendorProfile={vendorProfile} 
+                  onSuccess={() => {
+                    queryClient.invalidateQueries(["/api/user/vendor-profile"]);
+                  }}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default VendorDashboard;
