@@ -89,22 +89,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取每个供应商的用户信息
       const vendorsWithUserInfo = await Promise.all(
         pendingVendors.map(async (vendor) => {
-          const user = await storage.getUser(vendor.userId);
-          return {
-            ...vendor,
-            user: user ? { 
-              id: user.id,
-              email: user.email,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              avatar: user.avatar
-            } : null
-          };
+          try {
+            const userId = typeof vendor.userId === 'string' ? parseInt(vendor.userId) : vendor.userId;
+            const user = await storage.getUser(userId);
+            return {
+              ...vendor,
+              user: user ? { 
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.avatar
+              } : null
+            };
+          } catch (err) {
+            console.error(`Error processing vendor ${vendor.id}:`, err);
+            return vendor; // 返回没有用户信息的供应商
+          }
         })
       );
       
       res.json(vendorsWithUserInfo);
     } catch (error) {
+      console.error("Error in /api/admin/vendors/pending:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 获取所有供应商列表 (仅管理员)
+  app.get("/api/vendors/all", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const allVendors = await storage.getAllVendors();
+      
+      // 获取每个供应商的用户信息
+      const vendorsWithUserInfo = await Promise.all(
+        allVendors.map(async (vendor) => {
+          try {
+            const userId = typeof vendor.userId === 'string' ? parseInt(vendor.userId) : vendor.userId;
+            const user = await storage.getUser(userId);
+            return {
+              ...vendor,
+              user: user ? { 
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.avatar
+              } : null
+            };
+          } catch (err) {
+            console.error(`Error processing vendor ${vendor.id}:`, err);
+            return vendor; // 返回没有用户信息的供应商
+          }
+        })
+      );
+      
+      res.json(vendorsWithUserInfo);
+    } catch (error) {
+      console.error("Error in /api/vendors/all:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 获取待审核的供应商列表 (仅管理员)
+  app.get("/api/vendors/pending", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const pendingVendors = await storage.getPendingVendors();
+      
+      // 获取每个供应商的用户信息
+      const vendorsWithUserInfo = await Promise.all(
+        pendingVendors.map(async (vendor) => {
+          try {
+            const userId = typeof vendor.userId === 'string' ? parseInt(vendor.userId) : vendor.userId;
+            const user = await storage.getUser(userId);
+            return {
+              ...vendor,
+              user: user ? { 
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.avatar
+              } : null
+            };
+          } catch (err) {
+            console.error(`Error processing vendor ${vendor.id}:`, err);
+            return vendor; // 返回没有用户信息的供应商
+          }
+        })
+      );
+      
+      res.json(vendorsWithUserInfo);
+    } catch (error) {
+      console.error("Error in /api/vendors/pending:", error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -817,6 +894,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payment
       });
     } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 获取所有订单列表 (仅管理员)
+  app.get("/api/orders/all", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const allOrders = await storage.getAllOrders();
+      
+      // 获取每个订单的详细信息
+      const ordersWithDetails = await Promise.all(
+        allOrders.map(async (order) => {
+          try {
+            // 处理用户ID转换问题
+            const userId = typeof order.userId === 'string' ? parseInt(order.userId) : order.userId;
+            const user = await storage.getUser(userId);
+            const payment = await storage.getPaymentByOrderId(order.id);
+            
+            return {
+              ...order,
+              user: user ? {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName
+              } : null,
+              paymentStatus: payment ? payment.status : null
+            };
+          } catch (err) {
+            console.error(`Error processing order ${order.id}:`, err);
+            return order; // 返回没有详细信息的订单
+          }
+        })
+      );
+      
+      res.json(ordersWithDetails);
+    } catch (error) {
+      console.error("Error in /api/orders/all:", error);
       res.status(500).json({ message: error.message });
     }
   });
