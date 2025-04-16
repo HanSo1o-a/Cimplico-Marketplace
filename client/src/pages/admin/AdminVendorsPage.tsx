@@ -139,21 +139,22 @@ const AdminVendorsPage: React.FC = () => {
                         <div className="flex gap-2">
                           <Button
                             size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
                             onClick={() => handleApprove(vendor.id)}
                           >
-                            {t("admin.approve")}
+                            {t("admin.approveVendor")}
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="destructive"
                             size="sm"
                             onClick={() => {
-                              const reason = prompt(t("admin.rejectReason"));
+                              const reason = prompt(t("admin.provideReason"));
                               if (reason) {
                                 handleReject(vendor.id, reason);
                               }
                             }}
                           >
-                            {t("admin.reject")}
+                            {t("admin.rejectVendor")}
                           </Button>
                         </div>
                       </div>
