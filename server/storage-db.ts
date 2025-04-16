@@ -58,6 +58,26 @@ export class DatabaseStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
   }
+  
+  // 获取所有供应商
+  async getAllVendors(): Promise<VendorProfile[]> {
+    return await db.select().from(vendorProfiles);
+  }
+  
+  // 获取所有商品
+  async getAllListings(): Promise<Listing[]> {
+    return await db.select().from(listings);
+  }
+  
+  // 获取所有订单
+  async getAllOrders(): Promise<Order[]> {
+    return await db.select().from(orders);
+  }
+  
+  // 获取所有支付记录
+  async getAllPayments(): Promise<Payment[]> {
+    return await db.select().from(payments);
+  }
 
   //=======================
   // 供应商相关方法实现

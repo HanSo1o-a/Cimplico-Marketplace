@@ -27,6 +27,7 @@ export interface IStorage {
   updateVendorProfile(id: number, profile: Partial<VendorProfile>): Promise<VendorProfile | undefined>;
   getPendingVendors(): Promise<VendorProfile[]>;
   getApprovedVendors(): Promise<VendorProfile[]>;
+  getAllVendors(): Promise<VendorProfile[]>;
 
   // 商品相关方法
   getListing(id: number): Promise<Listing | undefined>;
@@ -39,6 +40,7 @@ export interface IStorage {
   createListing(listing: InsertListing): Promise<Listing>;
   updateListing(id: number, listing: Partial<Listing>): Promise<Listing | undefined>;
   deleteListing(id: number): Promise<boolean>;
+  getAllListings(): Promise<Listing[]>;
 
   // 企业相关方法
   getFirm(id: number): Promise<Firm | undefined>;
@@ -58,6 +60,7 @@ export interface IStorage {
   getOrdersByVendorId(vendorId: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: OrderStatus): Promise<Order | undefined>;
+  getAllOrders(): Promise<Order[]>;
 
   // 订单项相关方法
   getOrderItems(orderId: number): Promise<OrderItem[]>;
@@ -68,6 +71,7 @@ export interface IStorage {
   getPaymentByOrderId(orderId: number): Promise<Payment | undefined>;
   createPayment(payment: InsertPayment): Promise<Payment>;
   updatePaymentStatus(id: number, status: PaymentStatus, transactionId?: string): Promise<Payment | undefined>;
+  getAllPayments(): Promise<Payment[]>;
 
   // 评论相关方法
   getCommentsByListingId(listingId: number): Promise<Comment[]>;
