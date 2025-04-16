@@ -151,19 +151,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getListingsByVendorId(vendorId: number): Promise<Listing[]> {
-    return await db
-      .select()
-      .from(listings)
-      .where(eq(listings.vendorId, vendorId));
+    try {
+      const result = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.vendorId, vendorId));
+      
+      // 确保vendorId和categoryId是数字类型
+      return result.map(listing => ({
+        ...listing,
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
+        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
+      }));
+    } catch (error) {
+      console.error("Error in getListingsByVendorId:", error);
+      return [];
+    }
   }
 
   async getActiveListings(limit: number = 10, offset: number = 0): Promise<Listing[]> {
-    return await db
-      .select()
-      .from(listings)
-      .where(eq(listings.status, ListingStatus.ACTIVE))
-      .limit(limit)
-      .offset(offset);
+    try {
+      const result = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.status, ListingStatus.ACTIVE))
+        .limit(limit)
+        .offset(offset);
+      
+      // 确保vendorId是数字类型
+      return result.map(listing => ({
+        ...listing,
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
+        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
+      }));
+    } catch (error) {
+      console.error("Error in getActiveListings:", error);
+      return [];
+    }
   }
 
   async getPendingListings(): Promise<Listing[]> {
@@ -173,10 +197,11 @@ export class DatabaseStorage implements IStorage {
         .from(listings)
         .where(eq(listings.status, ListingStatus.PENDING));
       
-      // 确保vendorId是数字类型
+      // 确保vendorId和categoryId是数字类型
       return result.map(listing => ({
         ...listing,
-        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
+        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
       }));
     } catch (error) {
       console.error("Error in getPendingListings:", error);
@@ -185,11 +210,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeaturedListings(limit: number = 4): Promise<Listing[]> {
-    return await db
-      .select()
-      .from(listings)
-      .where(eq(listings.status, ListingStatus.ACTIVE))
-      .limit(limit);
+    try {
+      const result = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.status, ListingStatus.ACTIVE))
+        .limit(limit);
+      
+      // 确保vendorId和categoryId是数字类型
+      return result.map(listing => ({
+        ...listing,
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
+        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
+      }));
+    } catch (error) {
+      console.error("Error in getFeaturedListings:", error);
+      return [];
+    }
   }
 
   async getListingsByCategory(category: string): Promise<Listing[]> {
