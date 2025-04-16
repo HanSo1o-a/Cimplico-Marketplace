@@ -66,7 +66,18 @@ export class DatabaseStorage implements IStorage {
   
   // 获取所有商品
   async getAllListings(): Promise<Listing[]> {
-    return await db.select().from(listings);
+    try {
+      const result = await db.select().from(listings);
+      
+      // 确保vendorId是数字类型
+      return result.map(listing => ({
+        ...listing,
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId
+      }));
+    } catch (error) {
+      console.error("Error in getAllListings:", error);
+      return [];
+    }
   }
   
   // 获取所有订单
@@ -145,10 +156,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPendingListings(): Promise<Listing[]> {
-    return await db
-      .select()
-      .from(listings)
-      .where(eq(listings.status, ListingStatus.PENDING));
+    try {
+      const result = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.status, ListingStatus.PENDING));
+      
+      // 确保vendorId是数字类型
+      return result.map(listing => ({
+        ...listing,
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId
+      }));
+    } catch (error) {
+      console.error("Error in getPendingListings:", error);
+      return [];
+    }
   }
 
   async getFeaturedListings(limit: number = 4): Promise<Listing[]> {

@@ -704,21 +704,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listingsWithVendorInfo = await Promise.all(
         allListings.map(async (listing) => {
           try {
+            if (!listing.vendorId) {
+              console.log("Warning: Listing without vendorId:", listing.id);
+              return { ...listing, vendor: null };
+            }
+            
             const vendorId = typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId;
+            if (isNaN(vendorId)) {
+              console.log(`Warning: Invalid vendorId format for listing ${listing.id}:`, listing.vendorId);
+              return { ...listing, vendor: null };
+            }
+            
             const vendor = await storage.getVendorProfile(vendorId);
+            if (!vendor) {
+              console.log(`Warning: Vendor not found for listing ${listing.id}, vendorId:`, vendorId);
+              return { ...listing, vendor: null };
+            }
             
             // 处理用户ID转换问题
             let user = null;
-            if (vendor) {
+            if (vendor.userId) {
               const userId = typeof vendor.userId === 'string' ? parseInt(vendor.userId) : vendor.userId;
-              user = await storage.getUser(userId);
+              if (!isNaN(userId)) {
+                user = await storage.getUser(userId);
+              }
             }
             
             return {
               ...listing,
-              vendor: vendor ? {
+              vendor: {
                 id: vendor.id,
-                companyName: vendor.companyName,
+                companyName: vendor.companyName || "未命名公司",
                 verificationStatus: vendor.verificationStatus,
                 user: user ? {
                   id: user.id,
@@ -726,11 +742,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   lastName: user.lastName,
                   avatar: user.avatar
                 } : null
-              } : null
+              }
             };
           } catch (err) {
             console.error(`Error processing listing ${listing.id}:`, err);
-            return listing; // 返回没有供应商信息的商品
+            // 返回没有供应商信息的商品
+            return { ...listing, vendor: null };
           }
         })
       );
@@ -751,21 +768,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listingsWithVendorInfo = await Promise.all(
         pendingListings.map(async (listing) => {
           try {
+            if (!listing.vendorId) {
+              console.log("Warning: Pending listing without vendorId:", listing.id);
+              return { ...listing, vendor: null };
+            }
+            
             const vendorId = typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId;
+            if (isNaN(vendorId)) {
+              console.log(`Warning: Invalid vendorId format for pending listing ${listing.id}:`, listing.vendorId);
+              return { ...listing, vendor: null };
+            }
+            
             const vendor = await storage.getVendorProfile(vendorId);
+            if (!vendor) {
+              console.log(`Warning: Vendor not found for pending listing ${listing.id}, vendorId:`, vendorId);
+              return { ...listing, vendor: null };
+            }
             
             // 处理用户ID转换问题
             let user = null;
-            if (vendor) {
+            if (vendor.userId) {
               const userId = typeof vendor.userId === 'string' ? parseInt(vendor.userId) : vendor.userId;
-              user = await storage.getUser(userId);
+              if (!isNaN(userId)) {
+                user = await storage.getUser(userId);
+              }
             }
             
             return {
               ...listing,
-              vendor: vendor ? {
+              vendor: {
                 id: vendor.id,
-                companyName: vendor.companyName,
+                companyName: vendor.companyName || "未命名公司",
                 verificationStatus: vendor.verificationStatus,
                 user: user ? {
                   id: user.id,
@@ -773,11 +806,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   lastName: user.lastName,
                   avatar: user.avatar
                 } : null
-              } : null
+              }
             };
           } catch (err) {
             console.error(`Error processing pending listing ${listing.id}:`, err);
-            return listing; // 返回没有供应商信息的商品
+            // 返回没有供应商信息的商品
+            return { ...listing, vendor: null };
           }
         })
       );
