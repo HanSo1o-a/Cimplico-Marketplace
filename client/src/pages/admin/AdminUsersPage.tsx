@@ -95,7 +95,10 @@ const UsersTable = ({ users }: { users: User[] }) => {
         description: t("admin.userStatusUpdated"),
       });
 
-      // 关闭对话框并刷新数据
+      // 刷新用户列表数据
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+
+      // 关闭对话框并重置状态
       setActionDialog({ open: false, action: null });
       setSelectedUser(null);
     } catch (error) {
