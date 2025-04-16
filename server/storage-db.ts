@@ -538,6 +538,8 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+
+
   async getCategory(id: number): Promise<Category | undefined> {
     try {
       const result = await db.select().from(categories).where(eq(categories.id, id));
