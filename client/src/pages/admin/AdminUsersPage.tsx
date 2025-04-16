@@ -41,7 +41,7 @@ import { MoreHorizontal, UserCheck, UserX, User as UserIcon } from "lucide-react
 import { apiRequest } from "@/lib/queryClient";
 
 const UserStatusBadge = ({ status }: { status: UserStatus }) => {
-  const statusColors = {
+  const statusColors: Record<UserStatus, string> = {
     [UserStatus.ACTIVE]: "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100",
     [UserStatus.INACTIVE]: "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100",
     [UserStatus.SUSPENDED]: "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100",
@@ -131,10 +131,10 @@ const UsersTable = ({ users }: { users: User[] }) => {
               </TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>
-                <UserRoleBadge role={user.role} />
+                <UserRoleBadge role={user.role as UserRole} />
               </TableCell>
               <TableCell>
-                <UserStatusBadge status={user.status} />
+                <UserStatusBadge status={user.status as UserStatus} />
               </TableCell>
               <TableCell>{user.phone || "-"}</TableCell>
               <TableCell>{user.language}</TableCell>
@@ -148,7 +148,7 @@ const UsersTable = ({ users }: { users: User[] }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>{t("admin.actions")}</DropdownMenuLabel>
-                    {user.status !== UserStatus.ACTIVE && (
+                    {(user.status as UserStatus) !== UserStatus.ACTIVE && (
                       <DropdownMenuItem
                         onClick={() => {
                           setSelectedUser(user);
@@ -162,7 +162,7 @@ const UsersTable = ({ users }: { users: User[] }) => {
                         <span>{t("admin.activateUser")}</span>
                       </DropdownMenuItem>
                     )}
-                    {user.status !== UserStatus.SUSPENDED && (
+                    {(user.status as UserStatus) !== UserStatus.SUSPENDED && (
                       <DropdownMenuItem
                         onClick={() => {
                           setSelectedUser(user);
