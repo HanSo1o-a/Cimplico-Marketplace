@@ -20,6 +20,7 @@ import AdminHomePage from "@/pages/admin/AdminHomePage";
 import AdminProductsPage from "@/pages/admin/AdminProductsPage";
 import AdminVendorsPage from "@/pages/admin/AdminVendorsPage";
 import AdminOrdersPage from "@/pages/admin/AdminOrdersPage";
+import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
 import OrderDetail from "@/pages/order-detail";
@@ -50,6 +51,7 @@ function AdminRouter() {
   const renderAdminProductsPage = () => <AdminProductsPage />;
   const renderAdminVendorsPage = () => <AdminVendorsPage />;
   const renderAdminOrdersPage = () => <AdminOrdersPage />;
+  const renderAdminUsersPage = () => <AdminUsersPage />;
   const renderAdminDashboard = () => <AdminDashboard />;
   
   return (
@@ -58,6 +60,7 @@ function AdminRouter() {
       <Route path="/admin/products" component={renderAdminProductsPage} />
       <Route path="/admin/vendors" component={renderAdminVendorsPage} />
       <Route path="/admin/orders" component={renderAdminOrdersPage} />
+      <Route path="/admin/users" component={renderAdminUsersPage} />
       <Route path="/admin-dashboard" component={renderAdminDashboard} />
       <Route path="/auth" component={AuthPage} />
       <Route path="*" component={NotFound} />

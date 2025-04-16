@@ -1458,7 +1458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // 获取所有用户 (仅管理员)
-  app.get("/api/users/all", checkRole(UserRole.ADMIN), async (req, res) => {
+  app.get("/api/admin/users", checkRole(UserRole.ADMIN), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -1468,7 +1468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // 更新用户信息 (仅管理员)
-  app.patch("/api/users/:id", checkRole(UserRole.ADMIN), async (req, res) => {
+  app.patch("/api/admin/users/:id", checkRole(UserRole.ADMIN), async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       const { role, status } = req.body;
@@ -1486,7 +1486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // 获取所有供应商 (仅管理员)
-  app.get("/api/vendors/all", checkRole(UserRole.ADMIN), async (req, res) => {
+  app.get("/api/admin/vendors", checkRole(UserRole.ADMIN), async (req, res) => {
     try {
       const vendors = await storage.getAllVendors();
       
@@ -1514,7 +1514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // 获取所有订单 (仅管理员)
-  app.get("/api/orders/all", checkRole(UserRole.ADMIN), async (req, res) => {
+  app.get("/api/admin/orders", checkRole(UserRole.ADMIN), async (req, res) => {
     try {
       const orders = await storage.getAllOrders();
       
