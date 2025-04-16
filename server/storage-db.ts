@@ -230,12 +230,32 @@ export class DatabaseStorage implements IStorage {
         .limit(limit)
         .offset(offset);
       
-      // 确保vendorId是数字类型
-      return result.map(listing => ({
-        ...listing,
-        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
-        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
-      }));
+      // 确保vendorId和categoryId是数字类型
+      return result.map(listing => {
+        // 处理vendorId
+        let processedVendorId = listing.vendorId;
+        if (typeof processedVendorId === 'string') {
+          // 尝试转换为数字
+          const parsedVendorId = parseInt(processedVendorId);
+          // 如果转换结果是NaN，则使用null
+          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
+        }
+        
+        // 处理categoryId
+        let processedCategoryId = listing.categoryId;
+        if (processedCategoryId && typeof processedCategoryId === 'string') {
+          // 尝试转换为数字
+          const parsedCategoryId = parseInt(processedCategoryId);
+          // 如果转换结果是NaN，则使用null
+          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
+        }
+        
+        return {
+          ...listing,
+          vendorId: processedVendorId,
+          categoryId: processedCategoryId
+        };
+      });
     } catch (error) {
       console.error("Error in getActiveListings:", error);
       return [];
@@ -290,11 +310,31 @@ export class DatabaseStorage implements IStorage {
         .limit(limit);
       
       // 确保vendorId和categoryId是数字类型
-      return result.map(listing => ({
-        ...listing,
-        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
-        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
-      }));
+      return result.map(listing => {
+        // 处理vendorId
+        let processedVendorId = listing.vendorId;
+        if (typeof processedVendorId === 'string') {
+          // 尝试转换为数字
+          const parsedVendorId = parseInt(processedVendorId);
+          // 如果转换结果是NaN，则使用null
+          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
+        }
+        
+        // 处理categoryId
+        let processedCategoryId = listing.categoryId;
+        if (processedCategoryId && typeof processedCategoryId === 'string') {
+          // 尝试转换为数字
+          const parsedCategoryId = parseInt(processedCategoryId);
+          // 如果转换结果是NaN，则使用null
+          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
+        }
+        
+        return {
+          ...listing,
+          vendorId: processedVendorId,
+          categoryId: processedCategoryId
+        };
+      });
     } catch (error) {
       console.error("Error in getFeaturedListings:", error);
       return [];
@@ -314,11 +354,31 @@ export class DatabaseStorage implements IStorage {
         );
       
       // 确保vendorId和categoryId是数字类型
-      return result.map(listing => ({
-        ...listing,
-        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
-        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
-      }));
+      return result.map(listing => {
+        // 处理vendorId
+        let processedVendorId = listing.vendorId;
+        if (typeof processedVendorId === 'string') {
+          // 尝试转换为数字
+          const parsedVendorId = parseInt(processedVendorId);
+          // 如果转换结果是NaN，则使用null
+          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
+        }
+        
+        // 处理categoryId
+        let processedCategoryId = listing.categoryId;
+        if (processedCategoryId && typeof processedCategoryId === 'string') {
+          // 尝试转换为数字
+          const parsedCategoryId = parseInt(processedCategoryId);
+          // 如果转换结果是NaN，则使用null
+          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
+        }
+        
+        return {
+          ...listing,
+          vendorId: processedVendorId,
+          categoryId: processedCategoryId
+        };
+      });
     } catch (error) {
       console.error("Error in getListingsByCategory:", error);
       return [];
@@ -364,11 +424,31 @@ export class DatabaseStorage implements IStorage {
         .where(and(...conditions));
       
       // 确保vendorId和categoryId是数字类型
-      return result.map(listing => ({
-        ...listing,
-        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
-        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
-      }));
+      return result.map(listing => {
+        // 处理vendorId
+        let processedVendorId = listing.vendorId;
+        if (typeof processedVendorId === 'string') {
+          // 尝试转换为数字
+          const parsedVendorId = parseInt(processedVendorId);
+          // 如果转换结果是NaN，则使用null
+          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
+        }
+        
+        // 处理categoryId
+        let processedCategoryId = listing.categoryId;
+        if (processedCategoryId && typeof processedCategoryId === 'string') {
+          // 尝试转换为数字
+          const parsedCategoryId = parseInt(processedCategoryId);
+          // 如果转换结果是NaN，则使用null
+          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
+        }
+        
+        return {
+          ...listing,
+          vendorId: processedVendorId,
+          categoryId: processedCategoryId
+        };
+      });
     } catch (error) {
       console.error("Error in searchListings:", error);
       return [];
@@ -625,11 +705,31 @@ export class DatabaseStorage implements IStorage {
         .where(inArray(listings.id, listingIds));
       
       // 确保vendorId和categoryId是数字类型
-      return result.map(listing => ({
-        ...listing,
-        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
-        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
-      }));
+      return result.map(listing => {
+        // 处理vendorId
+        let processedVendorId = listing.vendorId;
+        if (typeof processedVendorId === 'string') {
+          // 尝试转换为数字
+          const parsedVendorId = parseInt(processedVendorId);
+          // 如果转换结果是NaN，则使用null
+          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
+        }
+        
+        // 处理categoryId
+        let processedCategoryId = listing.categoryId;
+        if (processedCategoryId && typeof processedCategoryId === 'string') {
+          // 尝试转换为数字
+          const parsedCategoryId = parseInt(processedCategoryId);
+          // 如果转换结果是NaN，则使用null
+          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
+        }
+        
+        return {
+          ...listing,
+          vendorId: processedVendorId,
+          categoryId: processedCategoryId
+        };
+      });
     } catch (error) {
       console.error("Error in getUserSavedListings:", error);
       return [];
@@ -762,11 +862,31 @@ export class DatabaseStorage implements IStorage {
         );
       
       // 确保vendorId和categoryId是数字类型
-      return result.map(listing => ({
-        ...listing,
-        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
-        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
-      }));
+      return result.map(listing => {
+        // 处理vendorId
+        let processedVendorId = listing.vendorId;
+        if (typeof processedVendorId === 'string') {
+          // 尝试转换为数字
+          const parsedVendorId = parseInt(processedVendorId);
+          // 如果转换结果是NaN，则使用null
+          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
+        }
+        
+        // 处理categoryId
+        let processedCategoryId = listing.categoryId;
+        if (processedCategoryId && typeof processedCategoryId === 'string') {
+          // 尝试转换为数字
+          const parsedCategoryId = parseInt(processedCategoryId);
+          // 如果转换结果是NaN，则使用null
+          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
+        }
+        
+        return {
+          ...listing,
+          vendorId: processedVendorId,
+          categoryId: processedCategoryId
+        };
+      });
     } catch (error) {
       console.error("Error in getListingsByCategoryId:", error);
       return [];
