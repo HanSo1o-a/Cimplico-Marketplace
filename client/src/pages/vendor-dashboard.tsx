@@ -79,7 +79,7 @@ const VendorDashboard = () => {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const tabParam = params.get("tab");
-  
+
   const { user, vendorProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<string>(tabParam || "dashboard");
   const [searchQuery, setSearchQuery] = useState("");
@@ -142,11 +142,11 @@ const VendorDashboard = () => {
       ? product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
-    
+
     const matchesStatus = statusFilter === "all" 
       ? true 
       : product.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   }) : [];
 
@@ -336,7 +336,7 @@ const VendorDashboard = () => {
                         const vendorItems = order.items?.filter(item => 
                           products?.some(p => p.id === item.listingId)
                         ) || [];
-                        
+
                         return sum + vendorItems.reduce((itemSum, item) => 
                           itemSum + (item.unitPrice * item.quantity), 0
                         );
@@ -409,7 +409,7 @@ const VendorDashboard = () => {
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h1 className="text-3xl font-bold">{t("vendor.products")}</h1>
-                
+
                 <Button 
                   onClick={() => {
                     setEditingProduct(null);
@@ -445,7 +445,7 @@ const VendorDashboard = () => {
                             className="pl-10"
                           />
                         </div>
-                        
+
                         <Select
                           value={statusFilter}
                           onValueChange={setStatusFilter}
@@ -527,7 +527,7 @@ const VendorDashboard = () => {
                                     {t(`product.${product.status?.toLowerCase() || 'unknown'}`)}
                                   </span>
                                 </TableCell>
-                                <TableCell>{product.category}</TableCell>
+                                <TableCell>{product.category || t('common.none')}</TableCell>
                                 <TableCell>
                                   <div className="flex">
                                     <Button 
@@ -668,7 +668,7 @@ const VendorDashboard = () => {
                             const vendorItems = order.items?.filter(item => 
                               products?.some(p => p.id === item.listingId)
                             ) || [];
-                            
+
                             const orderTotal = vendorItems.reduce((sum, item) => 
                               sum + (item.unitPrice * item.quantity), 0
                             );
@@ -721,7 +721,7 @@ const VendorDashboard = () => {
                                       >
                                         {t("order.viewDetails")}
                                       </DropdownMenuItem>
-                                      
+
                                       {/* Update status options based on current status */}
                                       {order.status === "PAID" && (
                                         <DropdownMenuItem
@@ -736,7 +736,7 @@ const VendorDashboard = () => {
                                           {t("order.markShipped")}
                                         </DropdownMenuItem>
                                       )}
-                                      
+
                                       {order.status === "SHIPPED" && (
                                         <DropdownMenuItem
                                           onClick={() => {
@@ -750,7 +750,7 @@ const VendorDashboard = () => {
                                           {t("order.markDelivered")}
                                         </DropdownMenuItem>
                                       )}
-                                      
+
                                       {order.status !== "COMPLETED" && order.status !== "CANCELLED" && (
                                         <DropdownMenuItem
                                           onClick={() => {
