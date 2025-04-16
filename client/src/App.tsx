@@ -58,6 +58,7 @@ function AdminRouter() {
     <Switch>
       <Route path="/admin" component={renderWithAdminLayout(AdminHomePage)} />
       <Route path="/admin/products" component={renderWithAdminLayout(AdminProductsPage)} />
+      <Route path="/admin/categories" component={renderWithAdminLayout(AdminCategoriesPage)} />
       <Route path="/admin/vendors" component={renderWithAdminLayout(AdminVendorsPage)} />
       <Route path="/admin/orders" component={renderWithAdminLayout(AdminOrdersPage)} />
       <Route path="/admin/users" component={renderWithAdminLayout(AdminUsersPage)} />

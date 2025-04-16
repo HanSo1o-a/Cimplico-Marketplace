@@ -710,7 +710,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return { ...listing, vendor: null };
             }
             
-            const vendorId = typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId;
+            // 确保vendorId是数字
+            const vendorId = Number(listing.vendorId);
             if (isNaN(vendorId)) {
               console.log(`Warning: Invalid vendorId format for listing ${listing.id}:`, listing.vendorId);
               return { ...listing, vendor: null };
@@ -725,7 +726,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // 处理用户ID转换问题
             let user = null;
             if (vendor.userId) {
-              const userId = typeof vendor.userId === 'string' ? parseInt(vendor.userId) : vendor.userId;
+              // 确保userId是数字
+              const userId = Number(vendor.userId);
               if (!isNaN(userId)) {
                 user = await storage.getUser(userId);
               }
@@ -754,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       res.json(listingsWithVendorInfo);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/listings/all:", error);
       res.status(500).json({ message: error.message });
     }
@@ -774,7 +776,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return { ...listing, vendor: null };
             }
             
-            const vendorId = typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId;
+            // 确保vendorId是数字
+            const vendorId = Number(listing.vendorId);
             if (isNaN(vendorId)) {
               console.log(`Warning: Invalid vendorId format for pending listing ${listing.id}:`, listing.vendorId);
               return { ...listing, vendor: null };
@@ -789,7 +792,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // 处理用户ID转换问题
             let user = null;
             if (vendor.userId) {
-              const userId = typeof vendor.userId === 'string' ? parseInt(vendor.userId) : vendor.userId;
+              // 确保userId是数字
+              const userId = Number(vendor.userId);
               if (!isNaN(userId)) {
                 user = await storage.getUser(userId);
               }
@@ -818,7 +822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       res.json(listingsWithVendorInfo);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/listings/pending:", error);
       res.status(500).json({ message: error.message });
     }
@@ -1033,7 +1037,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         allOrders.map(async (order) => {
           try {
             // 处理用户ID转换问题
-            const userId = typeof order.userId === 'string' ? parseInt(order.userId) : order.userId;
+            const userId = Number(order.userId);
+            if (isNaN(userId)) {
+              console.log(`Warning: Invalid userId format for order ${order.id}:`, order.userId);
+              return order;
+            }
+            
             const user = await storage.getUser(userId);
             const payment = await storage.getPaymentByOrderId(order.id);
             
@@ -1055,7 +1064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       res.json(ordersWithDetails);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/orders/all:", error);
       res.status(500).json({ message: error.message });
     }
