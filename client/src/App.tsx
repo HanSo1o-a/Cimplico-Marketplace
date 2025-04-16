@@ -47,21 +47,21 @@ function UserRouter() {
 
 // 管理员路由
 function AdminRouter() {
-  const renderAdminHomePage = () => <AdminHomePage />;
-  const renderAdminProductsPage = () => <AdminProductsPage />;
-  const renderAdminVendorsPage = () => <AdminVendorsPage />;
-  const renderAdminOrdersPage = () => <AdminOrdersPage />;
-  const renderAdminUsersPage = () => <AdminUsersPage />;
-  const renderAdminDashboard = () => <AdminDashboard />;
+  // 为每个管理页面添加AdminLayout包装
+  const renderWithAdminLayout = (Component: React.ComponentType) => () => (
+    <AdminLayout>
+      <Component />
+    </AdminLayout>
+  );
   
   return (
     <Switch>
-      <Route path="/admin" component={renderAdminHomePage} />
-      <Route path="/admin/products" component={renderAdminProductsPage} />
-      <Route path="/admin/vendors" component={renderAdminVendorsPage} />
-      <Route path="/admin/orders" component={renderAdminOrdersPage} />
-      <Route path="/admin/users" component={renderAdminUsersPage} />
-      <Route path="/admin-dashboard" component={renderAdminDashboard} />
+      <Route path="/admin" component={renderWithAdminLayout(AdminHomePage)} />
+      <Route path="/admin/products" component={renderWithAdminLayout(AdminProductsPage)} />
+      <Route path="/admin/vendors" component={renderWithAdminLayout(AdminVendorsPage)} />
+      <Route path="/admin/orders" component={renderWithAdminLayout(AdminOrdersPage)} />
+      <Route path="/admin/users" component={renderWithAdminLayout(AdminUsersPage)} />
+      <Route path="/admin-dashboard" component={renderWithAdminLayout(AdminDashboard)} />
       <Route path="/auth" component={AuthPage} />
       <Route path="*" component={NotFound} />
     </Switch>

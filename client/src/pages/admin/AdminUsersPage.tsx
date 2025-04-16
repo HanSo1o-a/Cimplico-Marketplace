@@ -291,32 +291,30 @@ const AdminUsersPage = () => {
   });
 
   return (
-    <AdminLayout>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>{t("admin.userManagement")}</CardTitle>
-          <CardDescription>
-            {t("admin.userManagementDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <LoadingState />
-          ) : error ? (
-            <div className="text-center py-4 text-red-500">
-              <p>{t("admin.errorLoadingUsers")}</p>
-            </div>
-          ) : users && users.length > 0 ? (
-            <UsersTable users={users} />
-          ) : (
-            <div className="text-center py-4 text-gray-500">
-              <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <p>{t("admin.noUsersFound")}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </AdminLayout>
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>{t("admin.userManagement")}</CardTitle>
+        <CardDescription>
+          {t("admin.userManagementDescription")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <LoadingState />
+        ) : error ? (
+          <div className="text-center py-4 text-red-500">
+            <p>{t("admin.errorLoadingUsers")}</p>
+          </div>
+        ) : users && users.length > 0 ? (
+          <UsersTable users={users} />
+        ) : (
+          <div className="text-center py-4 text-gray-500">
+            <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <p>{t("admin.noUsersFound")}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
