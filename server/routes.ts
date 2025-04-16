@@ -1152,6 +1152,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 获取供应商商品列表
+  app.get("/api/vendors/:vendorId/listings", checkRole(UserRole.VENDOR), async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.vendorId);
+      const vendor = await storage.getVendorProfile(vendorId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "供应商不存在" });
+      }
+      
+      // 确保只有供应商自己可以查看商品
+      if (vendor.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "权限不足" });
+      }
+      
+      // 获取供应商的所有商品（不管状态）
+      const listings = await storage.getListingsByVendorId(vendorId);
+      
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching vendor listings:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // 获取供应商订单列表
   app.get("/api/vendors/:vendorId/orders", checkRole(UserRole.VENDOR), async (req, res) => {
     try {

@@ -524,7 +524,7 @@ const VendorDashboard = () => {
                                       "bg-neutral-100 text-neutral-800"
                                     }`}
                                   >
-                                    {t(`product.${product.status?.toLowerCase() || 'unknown'}`)}
+                                    {t(`product.${product.status ? product.status.toLowerCase() : 'unknown'}`)}
                                   </span>
                                 </TableCell>
                                 <TableCell>{product.category || t('common.none')}</TableCell>

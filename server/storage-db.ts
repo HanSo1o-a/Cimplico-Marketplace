@@ -58,17 +58,17 @@ export class DatabaseStorage implements IStorage {
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
   }
-  
+
   // 获取所有供应商
   async getAllVendors(): Promise<VendorProfile[]> {
     return await db.select().from(vendorProfiles);
   }
-  
+
   // 获取所有商品
   async getAllListings(): Promise<Listing[]> {
     try {
       const result = await db.select().from(listings);
-      
+
       // 确保vendorId和categoryId是数字类型
       return result.map(listing => {
         // 处理vendorId
@@ -79,7 +79,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
         }
-        
+
         // 处理categoryId
         let processedCategoryId = listing.categoryId;
         if (processedCategoryId && typeof processedCategoryId === 'string') {
@@ -88,7 +88,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
         }
-        
+
         return {
           ...listing,
           vendorId: processedVendorId,
@@ -100,12 +100,12 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  
+
   // 获取所有订单
   async getAllOrders(): Promise<Order[]> {
     try {
       const result = await db.select().from(orders);
-      
+
       // 确保userId是数字类型
       return result.map(order => {
         // 处理userId
@@ -116,7 +116,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedUserId = isNaN(parsedUserId) ? null : parsedUserId;
         }
-        
+
         return {
           ...order,
           userId: processedUserId
@@ -127,7 +127,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  
+
   // 获取所有支付记录
   async getAllPayments(): Promise<Payment[]> {
     return await db.select().from(payments);
@@ -143,9 +143,9 @@ export class DatabaseStorage implements IStorage {
         console.warn("Invalid id passed to getVendorProfile:", id);
         return undefined;
       }
-      
+
       const result = await db.select().from(vendorProfiles).where(eq(vendorProfiles.id, id));
-      
+
       if (result && result.length > 0) {
         const vendor = result[0];
         // 处理userId如果是字符串
@@ -169,9 +169,9 @@ export class DatabaseStorage implements IStorage {
         console.warn("Invalid userId passed to getVendorProfileByUserId:", userId);
         return undefined;
       }
-      
+
       const result = await db.select().from(vendorProfiles).where(eq(vendorProfiles.userId, userId));
-      
+
       if (result && result.length > 0) {
         const vendor = result[0];
         // 处理userId如果是字符串
@@ -208,7 +208,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(vendorProfiles)
         .where(eq(vendorProfiles.verificationStatus, VendorVerificationStatus.PENDING));
-      
+
       // 处理userId如果是字符串
       return result.map(vendor => {
         let processedUserId = vendor.userId;
@@ -218,7 +218,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedUserId = isNaN(parsedUserId) ? null : parsedUserId;
         }
-        
+
         return {
           ...vendor,
           userId: processedUserId
@@ -236,7 +236,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(vendorProfiles)
         .where(eq(vendorProfiles.verificationStatus, VendorVerificationStatus.APPROVED));
-      
+
       // 处理userId如果是字符串
       return result.map(vendor => {
         let processedUserId = vendor.userId;
@@ -246,7 +246,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedUserId = isNaN(parsedUserId) ? null : parsedUserId;
         }
-        
+
         return {
           ...vendor,
           userId: processedUserId
@@ -268,12 +268,12 @@ export class DatabaseStorage implements IStorage {
         console.warn("Invalid id passed to getListing:", id);
         return undefined;
       }
-      
+
       const result = await db.select().from(listings).where(eq(listings.id, id));
-      
+
       if (result && result.length > 0) {
         const listing = result[0];
-        
+
         // 处理vendorId
         let processedVendorId = listing.vendorId;
         if (typeof processedVendorId === 'string') {
@@ -282,7 +282,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
         }
-        
+
         // 处理categoryId
         let processedCategoryId = listing.categoryId;
         if (processedCategoryId && typeof processedCategoryId === 'string') {
@@ -291,14 +291,14 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
         }
-        
+
         return {
           ...listing,
           vendorId: processedVendorId,
           categoryId: processedCategoryId
         };
       }
-      
+
       return undefined;
     } catch (error) {
       console.error(`Error in getListing with id ${id}:`, error);
@@ -306,39 +306,15 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // 获取供应商的商品
   async getListingsByVendorId(vendorId: number): Promise<Listing[]> {
     try {
-      const result = await db
-        .select()
-        .from(listings)
-        .where(eq(listings.vendorId, vendorId));
-      
-      // 确保vendorId和categoryId是数字类型
-      return result.map(listing => {
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-        
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-        
-        return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
-        };
-      });
+      const result = await db.select().from(listings).where(eq(listings.vendorId, vendorId));
+      return result.map(listing => ({
+        ...listing,
+        images: listing.images as string[],
+        tags: listing.tags as string[]
+      }));
     } catch (error) {
       console.error("Error in getListingsByVendorId:", error);
       return [];
@@ -353,7 +329,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(listings.status, ListingStatus.ACTIVE))
         .limit(limit)
         .offset(offset);
-      
+
       // 确保vendorId和categoryId是数字类型
       return result.map(listing => {
         // 处理vendorId
@@ -364,7 +340,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
         }
-        
+
         // 处理categoryId
         let processedCategoryId = listing.categoryId;
         if (processedCategoryId && typeof processedCategoryId === 'string') {
@@ -373,7 +349,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
         }
-        
+
         return {
           ...listing,
           vendorId: processedVendorId,
@@ -392,7 +368,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(listings)
         .where(eq(listings.status, ListingStatus.PENDING));
-      
+
       // 确保vendorId和categoryId是数字类型
       return result.map(listing => {
         // 处理vendorId
@@ -403,7 +379,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
         }
-        
+
         // 处理categoryId
         let processedCategoryId = listing.categoryId;
         if (processedCategoryId && typeof processedCategoryId === 'string') {
@@ -412,7 +388,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
         }
-        
+
         return {
           ...listing,
           vendorId: processedVendorId,
@@ -432,7 +408,7 @@ export class DatabaseStorage implements IStorage {
         .from(listings)
         .where(eq(listings.status, ListingStatus.ACTIVE))
         .limit(limit);
-      
+
       // 确保vendorId和categoryId是数字类型
       return result.map(listing => {
         // 处理vendorId
@@ -443,7 +419,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
         }
-        
+
         // 处理categoryId
         let processedCategoryId = listing.categoryId;
         if (processedCategoryId && typeof processedCategoryId === 'string') {
@@ -452,7 +428,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
         }
-        
+
         return {
           ...listing,
           vendorId: processedVendorId,
@@ -476,7 +452,7 @@ export class DatabaseStorage implements IStorage {
             eq(listings.category, category)
           )
         );
-      
+
       // 确保vendorId和categoryId是数字类型
       return result.map(listing => {
         // 处理vendorId
@@ -487,7 +463,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
         }
-        
+
         // 处理categoryId
         let processedCategoryId = listing.categoryId;
         if (processedCategoryId && typeof processedCategoryId === 'string') {
@@ -496,7 +472,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
         }
-        
+
         return {
           ...listing,
           vendorId: processedVendorId,
@@ -513,7 +489,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // 构建WHERE条件
       const conditions: SQL[] = [eq(listings.status, ListingStatus.ACTIVE)];
-      
+
       // 搜索词匹配
       if (query) {
         const searchTerm = `%${query.toLowerCase()}%`;
@@ -524,29 +500,29 @@ export class DatabaseStorage implements IStorage {
           )
         );
       }
-      
+
       // 应用额外过滤条件
       if (filters) {
         // 分类过滤
         if (filters.category && filters.category !== 'all') {
           conditions.push(eq(listings.category, filters.category));
         }
-        
+
         // 价格范围过滤
         if (filters.minPrice !== undefined) {
           conditions.push(gte(listings.price, filters.minPrice));
         }
-        
+
         if (filters.maxPrice !== undefined && filters.maxPrice > 0) {
           conditions.push(lte(listings.price, filters.maxPrice));
         }
       }
-      
+
       const result = await db
         .select()
         .from(listings)
         .where(and(...conditions));
-      
+
       // 确保vendorId和categoryId是数字类型
       return result.map(listing => {
         // 处理vendorId
@@ -557,7 +533,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
         }
-        
+
         // 处理categoryId
         let processedCategoryId = listing.categoryId;
         if (processedCategoryId && typeof processedCategoryId === 'string') {
@@ -566,7 +542,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
         }
-        
+
         return {
           ...listing,
           vendorId: processedVendorId,
@@ -675,11 +651,11 @@ export class DatabaseStorage implements IStorage {
     // 获取供应商的所有商品ID
     const vendorListings = await this.getListingsByVendorId(vendorId);
     const listingIds = vendorListings.map(listing => listing.id);
-    
+
     if (listingIds.length === 0) {
       return [];
     }
-    
+
     // 查找包含供应商商品的订单项
     const ordersWithVendorItems = await db
       .select({
@@ -688,13 +664,13 @@ export class DatabaseStorage implements IStorage {
       .from(orderItems)
       .where(inArray(orderItems.listingId, listingIds))
       .groupBy(orderItems.orderId);
-    
+
     const orderIds = ordersWithVendorItems.map(item => item.orderId);
-    
+
     if (orderIds.length === 0) {
       return [];
     }
-    
+
     // 获取订单详情
     return await db
       .select()
@@ -754,11 +730,11 @@ export class DatabaseStorage implements IStorage {
       status,
       updatedAt: new Date()
     };
-    
+
     if (transactionId) {
       updateData.transactionId = transactionId;
     }
-    
+
     const result = await db
       .update(payments)
       .set(updateData)
@@ -815,19 +791,19 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(userSavedListings)
         .where(eq(userSavedListings.userId, userId));
-      
+
       const listingIds = savedItems.map(item => item.listingId);
-      
+
       if (listingIds.length === 0) {
         return [];
       }
-      
+
       // 获取商品详情
       const result = await db
         .select()
         .from(listings)
         .where(inArray(listings.id, listingIds));
-      
+
       // 确保vendorId和categoryId是数字类型
       return result.map(listing => {
         // 处理vendorId
@@ -838,7 +814,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
         }
-        
+
         // 处理categoryId
         let processedCategoryId = listing.categoryId;
         if (processedCategoryId && typeof processedCategoryId === 'string') {
@@ -847,7 +823,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
         }
-        
+
         return {
           ...listing,
           vendorId: processedVendorId,
@@ -960,7 +936,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(listings)
         .where(eq(listings.categoryId, id));
-      
+
       if (listingsWithCategory.length > 0) {
         throw new Error("无法删除分类，因为有商品正在使用此分类");
       }
@@ -984,7 +960,7 @@ export class DatabaseStorage implements IStorage {
             eq(listings.categoryId, categoryId)
           )
         );
-      
+
       // 确保vendorId和categoryId是数字类型
       return result.map(listing => {
         // 处理vendorId
@@ -995,7 +971,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
         }
-        
+
         // 处理categoryId
         let processedCategoryId = listing.categoryId;
         if (processedCategoryId && typeof processedCategoryId === 'string') {
@@ -1004,7 +980,7 @@ export class DatabaseStorage implements IStorage {
           // 如果转换结果是NaN，则使用null
           processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
         }
-        
+
         return {
           ...listing,
           vendorId: processedVendorId,
@@ -1021,7 +997,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // 先获取所有分类
       const allCategories = await this.getAllCategories();
-      
+
       // 为每个分类统计商品数量
       const categoriesWithCount = await Promise.all(
         allCategories.map(async (category) => {
@@ -1032,7 +1008,7 @@ export class DatabaseStorage implements IStorage {
           };
         })
       );
-      
+
       return categoriesWithCount;
     } catch (error) {
       console.error("Error in getCategoryWithProductCount:", error);
