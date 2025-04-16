@@ -230,53 +230,77 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getListingsByCategory(category: string): Promise<Listing[]> {
-    return await db
-      .select()
-      .from(listings)
-      .where(
-        and(
-          eq(listings.status, ListingStatus.ACTIVE),
-          eq(listings.category, category)
-        )
-      );
+    try {
+      const result = await db
+        .select()
+        .from(listings)
+        .where(
+          and(
+            eq(listings.status, ListingStatus.ACTIVE),
+            eq(listings.category, category)
+          )
+        );
+      
+      // 确保vendorId和categoryId是数字类型
+      return result.map(listing => ({
+        ...listing,
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
+        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
+      }));
+    } catch (error) {
+      console.error("Error in getListingsByCategory:", error);
+      return [];
+    }
   }
 
   async searchListings(query: string, filters?: any): Promise<Listing[]> {
-    // 构建WHERE条件
-    const conditions: SQL[] = [eq(listings.status, ListingStatus.ACTIVE)];
-    
-    // 搜索词匹配
-    if (query) {
-      const searchTerm = `%${query.toLowerCase()}%`;
-      conditions.push(
-        or(
-          like(listings.title, searchTerm),
-          like(listings.description, searchTerm)
-        )
-      );
-    }
-    
-    // 应用额外过滤条件
-    if (filters) {
-      // 分类过滤
-      if (filters.category && filters.category !== 'all') {
-        conditions.push(eq(listings.category, filters.category));
+    try {
+      // 构建WHERE条件
+      const conditions: SQL[] = [eq(listings.status, ListingStatus.ACTIVE)];
+      
+      // 搜索词匹配
+      if (query) {
+        const searchTerm = `%${query.toLowerCase()}%`;
+        conditions.push(
+          or(
+            like(listings.title, searchTerm),
+            like(listings.description, searchTerm)
+          )
+        );
       }
       
-      // 价格范围过滤
-      if (filters.minPrice !== undefined) {
-        conditions.push(gte(listings.price, filters.minPrice));
+      // 应用额外过滤条件
+      if (filters) {
+        // 分类过滤
+        if (filters.category && filters.category !== 'all') {
+          conditions.push(eq(listings.category, filters.category));
+        }
+        
+        // 价格范围过滤
+        if (filters.minPrice !== undefined) {
+          conditions.push(gte(listings.price, filters.minPrice));
+        }
+        
+        if (filters.maxPrice !== undefined && filters.maxPrice > 0) {
+          conditions.push(lte(listings.price, filters.maxPrice));
+        }
       }
       
-      if (filters.maxPrice !== undefined && filters.maxPrice > 0) {
-        conditions.push(lte(listings.price, filters.maxPrice));
-      }
+      const result = await db
+        .select()
+        .from(listings)
+        .where(and(...conditions));
+      
+      // 确保vendorId和categoryId是数字类型
+      return result.map(listing => ({
+        ...listing,
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
+        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
+      }));
+    } catch (error) {
+      console.error("Error in searchListings:", error);
+      return [];
     }
-    
-    return await db
-      .select()
-      .from(listings)
-      .where(and(...conditions));
   }
 
   async createListing(listingData: InsertListing): Promise<Listing> {
@@ -509,23 +533,35 @@ export class DatabaseStorage implements IStorage {
   // 用户收藏相关方法
   //=======================
   async getUserSavedListings(userId: number): Promise<Listing[]> {
-    // 获取用户收藏的商品ID
-    const savedItems = await db
-      .select()
-      .from(userSavedListings)
-      .where(eq(userSavedListings.userId, userId));
-    
-    const listingIds = savedItems.map(item => item.listingId);
-    
-    if (listingIds.length === 0) {
+    try {
+      // 获取用户收藏的商品ID
+      const savedItems = await db
+        .select()
+        .from(userSavedListings)
+        .where(eq(userSavedListings.userId, userId));
+      
+      const listingIds = savedItems.map(item => item.listingId);
+      
+      if (listingIds.length === 0) {
+        return [];
+      }
+      
+      // 获取商品详情
+      const result = await db
+        .select()
+        .from(listings)
+        .where(inArray(listings.id, listingIds));
+      
+      // 确保vendorId和categoryId是数字类型
+      return result.map(listing => ({
+        ...listing,
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
+        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
+      }));
+    } catch (error) {
+      console.error("Error in getUserSavedListings:", error);
       return [];
     }
-    
-    // 获取商品详情
-    return await db
-      .select()
-      .from(listings)
-      .where(inArray(listings.id, listingIds));
   }
 
   async saveListingForUser(data: InsertUserSavedListing): Promise<UserSavedListing> {
@@ -643,7 +679,7 @@ export class DatabaseStorage implements IStorage {
 
   async getListingsByCategoryId(categoryId: number): Promise<Listing[]> {
     try {
-      return await db
+      const result = await db
         .select()
         .from(listings)
         .where(
@@ -652,6 +688,13 @@ export class DatabaseStorage implements IStorage {
             eq(listings.categoryId, categoryId)
           )
         );
+      
+      // 确保vendorId和categoryId是数字类型
+      return result.map(listing => ({
+        ...listing,
+        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId,
+        categoryId: listing.categoryId ? (typeof listing.categoryId === 'string' ? parseInt(listing.categoryId) : listing.categoryId) : null
+      }));
     } catch (error) {
       console.error("Error in getListingsByCategoryId:", error);
       return [];
