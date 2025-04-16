@@ -96,17 +96,28 @@ export const vendorProfiles = pgTable("vendor_profiles", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+// 商品分类表
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 // 商品表
 export const listings = pgTable("listings", {
   id: serial("id").primaryKey(),
   vendorId: integer("vendor_id").notNull().references(() => vendorProfiles.id),
+  categoryId: integer("category_id").references(() => categories.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
   price: doublePrecision("price").notNull(),
   type: text("type").notNull().default(ListingType.DIGITAL),
   status: text("status").notNull().default(ListingStatus.DRAFT),
   images: json("images").notNull().default([]),
-  category: text("category").notNull(),
+  category: text("category").notNull(), // 保留旧字段用于兼容性
   tags: json("tags").notNull().default([]),
   rejectionReason: text("rejection_reason"),
   downloadUrl: text("download_url"),
@@ -191,6 +202,13 @@ export const userSavedListings = pgTable("user_saved_listings", {
   userId: integer("user_id").notNull().references(() => users.id),
   listingId: integer("listing_id").notNull().references(() => listings.id),
   savedAt: timestamp("saved_at").defaultNow()
+});
+
+// 商品分类模式
+export const insertCategorySchema = createInsertSchema(categories).pick({
+  name: true,
+  slug: true,
+  description: true
 });
 
 // 创建各个表的插入模式
@@ -283,6 +301,9 @@ export const insertUserSavedListingSchema = createInsertSchema(userSavedListings
 });
 
 // 创建类型定义
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type Category = typeof categories.$inferSelect;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 

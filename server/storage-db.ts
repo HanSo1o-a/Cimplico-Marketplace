@@ -1,11 +1,11 @@
 import {
   User, VendorProfile, Listing, Firm, FirmWhitelistedUser, InstalledListing,
-  Order, OrderItem, Payment, Comment, UserSavedListing,
+  Order, OrderItem, Payment, Comment, UserSavedListing, Category,
   InsertUser, InsertVendorProfile, InsertListing, InsertFirm, InsertFirmWhitelistedUser,
   InsertInstalledListing, InsertOrder, InsertOrderItem, InsertPayment, InsertComment,
-  InsertUserSavedListing, ListingStatus, VendorVerificationStatus, UserRole, OrderStatus, PaymentStatus,
+  InsertUserSavedListing, InsertCategory, ListingStatus, VendorVerificationStatus, UserRole, OrderStatus, PaymentStatus,
   users, vendorProfiles, listings, firms, firmWhitelistedUsers, installedListings,
-  orders, orderItems, payments, comments, userSavedListings
+  orders, orderItems, payments, comments, userSavedListings, categories
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, inArray, like, gte, lte, sql, SQL } from "drizzle-orm";
@@ -524,6 +524,122 @@ export class DatabaseStorage implements IStorage {
         )
       );
     return result.length > 0;
+  }
+
+  //=======================
+  // 商品分类相关方法
+  //=======================
+  async getAllCategories(): Promise<Category[]> {
+    try {
+      return await db.select().from(categories);
+    } catch (error) {
+      console.error("Error in getAllCategories:", error);
+      return [];
+    }
+  }
+
+  async getCategory(id: number): Promise<Category | undefined> {
+    try {
+      const result = await db.select().from(categories).where(eq(categories.id, id));
+      return result[0];
+    } catch (error) {
+      console.error("Error in getCategory:", error);
+      return undefined;
+    }
+  }
+
+  async getCategoryBySlug(slug: string): Promise<Category | undefined> {
+    try {
+      const result = await db.select().from(categories).where(eq(categories.slug, slug));
+      return result[0];
+    } catch (error) {
+      console.error("Error in getCategoryBySlug:", error);
+      return undefined;
+    }
+  }
+
+  async createCategory(categoryData: InsertCategory): Promise<Category> {
+    try {
+      const result = await db.insert(categories).values(categoryData).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error in createCategory:", error);
+      throw error;
+    }
+  }
+
+  async updateCategory(id: number, categoryData: Partial<Category>): Promise<Category | undefined> {
+    try {
+      const result = await db
+        .update(categories)
+        .set({ ...categoryData, updatedAt: new Date() })
+        .where(eq(categories.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error in updateCategory:", error);
+      return undefined;
+    }
+  }
+
+  async deleteCategory(id: number): Promise<boolean> {
+    try {
+      // 先检查是否有商品使用此分类
+      const listingsWithCategory = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.categoryId, id));
+      
+      if (listingsWithCategory.length > 0) {
+        throw new Error("无法删除分类，因为有商品正在使用此分类");
+      }
+
+      await db.delete(categories).where(eq(categories.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error in deleteCategory:", error);
+      throw error;
+    }
+  }
+
+  async getListingsByCategoryId(categoryId: number): Promise<Listing[]> {
+    try {
+      return await db
+        .select()
+        .from(listings)
+        .where(
+          and(
+            eq(listings.status, ListingStatus.ACTIVE),
+            eq(listings.categoryId, categoryId)
+          )
+        );
+    } catch (error) {
+      console.error("Error in getListingsByCategoryId:", error);
+      return [];
+    }
+  }
+
+  async getCategoryWithProductCount(): Promise<(Category & { productsCount: number })[]> {
+    try {
+      // 先获取所有分类
+      const allCategories = await this.getAllCategories();
+      
+      // 为每个分类统计商品数量
+      const categoriesWithCount = await Promise.all(
+        allCategories.map(async (category) => {
+          const products = await this.getListingsByCategoryId(category.id);
+          return {
+            ...category,
+            productsCount: products.length
+          };
+        })
+      );
+      
+      return categoriesWithCount;
+    } catch (error) {
+      console.error("Error in getCategoryWithProductCount:", error);
+      return [];
+    }
   }
 }
 

@@ -85,6 +85,16 @@ export interface IStorage {
   saveListingForUser(data: InsertUserSavedListing): Promise<UserSavedListing>;
   removeSavedListing(userId: number, listingId: number): Promise<boolean>;
   isListingSavedByUser(userId: number, listingId: number): Promise<boolean>;
+
+  // 商品分类相关方法
+  getAllCategories(): Promise<Category[]>;
+  getCategory(id: number): Promise<Category | undefined>;
+  getCategoryBySlug(slug: string): Promise<Category | undefined>;
+  createCategory(categoryData: InsertCategory): Promise<Category>;
+  updateCategory(id: number, categoryData: Partial<Category>): Promise<Category | undefined>;
+  deleteCategory(id: number): Promise<boolean>;
+  getListingsByCategoryId(categoryId: number): Promise<Listing[]>;
+  getCategoryWithProductCount(): Promise<(Category & { productsCount: number })[]>;
 }
 
 // 导出存储实例
