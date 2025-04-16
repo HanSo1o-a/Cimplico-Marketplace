@@ -38,7 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { User, UserRole, UserStatus } from "@shared/schema";
 import { MoreHorizontal, UserCheck, UserX, User as UserIcon } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const UserStatusBadge = ({ status }: { status: UserStatus }) => {
   const statusColors: Record<UserStatus, string> = {

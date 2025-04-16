@@ -89,11 +89,7 @@ function RouterSelector() {
 
   // 根据用户角色选择不同的路由和布局
   if (user && user.role === UserRole.ADMIN) {
-    return (
-      <AdminLayout>
-        <AdminRouter />
-      </AdminLayout>
-    );
+    return <AdminRouter />;
   }
 
   return (
