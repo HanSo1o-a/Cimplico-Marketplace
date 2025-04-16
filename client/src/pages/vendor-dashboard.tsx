@@ -510,7 +510,9 @@ const VendorDashboard = () => {
                                 <TableCell>
                                   {product.price === 0 
                                     ? t("product.free") 
-                                    : `¥${product.price.toFixed(2)}`}
+                                    : product.price 
+                                      ? `¥${product.price.toFixed(2)}` 
+                                      : `¥0.00`}
                                 </TableCell>
                                 <TableCell>
                                   <span 

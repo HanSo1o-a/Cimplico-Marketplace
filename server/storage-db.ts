@@ -82,7 +82,18 @@ export class DatabaseStorage implements IStorage {
   
   // 获取所有订单
   async getAllOrders(): Promise<Order[]> {
-    return await db.select().from(orders);
+    try {
+      const result = await db.select().from(orders);
+      
+      // 确保userId是数字类型
+      return result.map(order => ({
+        ...order,
+        userId: typeof order.userId === 'string' ? parseInt(order.userId) : order.userId
+      }));
+    } catch (error) {
+      console.error("Error in getAllOrders:", error);
+      return [];
+    }
   }
   
   // 获取所有支付记录
