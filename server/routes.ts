@@ -206,6 +206,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // 批准供应商 (仅管理员)
+  app.post("/api/vendors/:id/approve", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.id);
+      
+      const vendor = await storage.getVendorProfile(vendorId);
+      if (!vendor) {
+        return res.status(404).json({ message: "供应商不存在" });
+      }
+      
+      const updatedProfile = await storage.updateVendorProfile(vendorId, {
+        verificationStatus: VendorVerificationStatus.APPROVED,
+        rejectionReason: null
+      });
+      
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error("Error in /api/vendors/:id/approve:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 拒绝供应商 (仅管理员)
+  app.post("/api/vendors/:id/reject", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      const vendor = await storage.getVendorProfile(vendorId);
+      if (!vendor) {
+        return res.status(404).json({ message: "供应商不存在" });
+      }
+      
+      const updatedProfile = await storage.updateVendorProfile(vendorId, {
+        verificationStatus: VendorVerificationStatus.REJECTED,
+        rejectionReason: reason || "未提供拒绝原因"
+      });
+      
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error("Error in /api/vendors/:id/reject:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // 获取认证供应商列表
   app.get("/api/vendors", async (req, res) => {
@@ -605,6 +650,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // 批准商品 (仅管理员)
+  app.post("/api/listings/:id/approve", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const listingId = parseInt(req.params.id);
+      
+      const listing = await storage.getListing(listingId);
+      if (!listing) {
+        return res.status(404).json({ message: "商品不存在" });
+      }
+      
+      const updatedListing = await storage.updateListing(listingId, {
+        status: ListingStatus.ACTIVE,
+        rejectionReason: null
+      });
+      
+      res.json(updatedListing);
+    } catch (error) {
+      console.error("Error in /api/listings/:id/approve:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 拒绝商品 (仅管理员)
+  app.post("/api/listings/:id/reject", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const listingId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      const listing = await storage.getListing(listingId);
+      if (!listing) {
+        return res.status(404).json({ message: "商品不存在" });
+      }
+      
+      const updatedListing = await storage.updateListing(listingId, {
+        status: ListingStatus.REJECTED,
+        rejectionReason: reason || "未提供拒绝原因"
+      });
+      
+      res.json(updatedListing);
+    } catch (error) {
+      console.error("Error in /api/listings/:id/reject:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
   // 获取所有商品 (仅管理员)
   app.get("/api/listings/all", checkRole(UserRole.ADMIN), async (req, res) => {
     try {
@@ -651,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
-  
+
   // 获取待审核的商品 (仅管理员)
   app.get("/api/listings/pending", checkRole(UserRole.ADMIN), async (req, res) => {
     try {
