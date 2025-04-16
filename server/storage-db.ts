@@ -69,11 +69,32 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db.select().from(listings);
       
-      // 确保vendorId是数字类型
-      return result.map(listing => ({
-        ...listing,
-        vendorId: typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId
-      }));
+      // 确保vendorId和categoryId是数字类型
+      return result.map(listing => {
+        // 处理vendorId
+        let processedVendorId = listing.vendorId;
+        if (typeof processedVendorId === 'string') {
+          // 尝试转换为数字
+          const parsedVendorId = parseInt(processedVendorId);
+          // 如果转换结果是NaN，则使用null
+          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
+        }
+        
+        // 处理categoryId
+        let processedCategoryId = listing.categoryId;
+        if (processedCategoryId && typeof processedCategoryId === 'string') {
+          // 尝试转换为数字
+          const parsedCategoryId = parseInt(processedCategoryId);
+          // 如果转换结果是NaN，则使用null
+          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
+        }
+        
+        return {
+          ...listing,
+          vendorId: processedVendorId,
+          categoryId: processedCategoryId
+        };
+      });
     } catch (error) {
       console.error("Error in getAllListings:", error);
       return [];
