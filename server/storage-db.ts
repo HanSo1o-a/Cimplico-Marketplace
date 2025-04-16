@@ -137,13 +137,55 @@ export class DatabaseStorage implements IStorage {
   // 供应商相关方法实现
   //=======================
   async getVendorProfile(id: number): Promise<VendorProfile | undefined> {
-    const result = await db.select().from(vendorProfiles).where(eq(vendorProfiles.id, id));
-    return result[0];
+    try {
+      // 确保id是有效数字
+      if (id === null || id === undefined || isNaN(id)) {
+        console.warn("Invalid id passed to getVendorProfile:", id);
+        return undefined;
+      }
+      
+      const result = await db.select().from(vendorProfiles).where(eq(vendorProfiles.id, id));
+      
+      if (result && result.length > 0) {
+        const vendor = result[0];
+        // 处理userId如果是字符串
+        if (typeof vendor.userId === 'string') {
+          const parsedUserId = parseInt(vendor.userId);
+          vendor.userId = isNaN(parsedUserId) ? null : parsedUserId;
+        }
+        return vendor;
+      }
+      return undefined;
+    } catch (error) {
+      console.error(`Error in getVendorProfile with id ${id}:`, error);
+      return undefined;
+    }
   }
 
   async getVendorProfileByUserId(userId: number): Promise<VendorProfile | undefined> {
-    const result = await db.select().from(vendorProfiles).where(eq(vendorProfiles.userId, userId));
-    return result[0];
+    try {
+      // 确保userId是有效数字
+      if (userId === null || userId === undefined || isNaN(userId)) {
+        console.warn("Invalid userId passed to getVendorProfileByUserId:", userId);
+        return undefined;
+      }
+      
+      const result = await db.select().from(vendorProfiles).where(eq(vendorProfiles.userId, userId));
+      
+      if (result && result.length > 0) {
+        const vendor = result[0];
+        // 处理userId如果是字符串
+        if (typeof vendor.userId === 'string') {
+          const parsedUserId = parseInt(vendor.userId);
+          vendor.userId = isNaN(parsedUserId) ? null : parsedUserId;
+        }
+        return vendor;
+      }
+      return undefined;
+    } catch (error) {
+      console.error(`Error in getVendorProfileByUserId with userId ${userId}:`, error);
+      return undefined;
+    }
   }
 
   async createVendorProfile(profileData: InsertVendorProfile): Promise<VendorProfile> {
@@ -178,8 +220,48 @@ export class DatabaseStorage implements IStorage {
   // 商品相关方法实现
   //=======================
   async getListing(id: number): Promise<Listing | undefined> {
-    const result = await db.select().from(listings).where(eq(listings.id, id));
-    return result[0];
+    try {
+      // 确保id是有效数字
+      if (id === null || id === undefined || isNaN(id)) {
+        console.warn("Invalid id passed to getListing:", id);
+        return undefined;
+      }
+      
+      const result = await db.select().from(listings).where(eq(listings.id, id));
+      
+      if (result && result.length > 0) {
+        const listing = result[0];
+        
+        // 处理vendorId
+        let processedVendorId = listing.vendorId;
+        if (typeof processedVendorId === 'string') {
+          // 尝试转换为数字
+          const parsedVendorId = parseInt(processedVendorId);
+          // 如果转换结果是NaN，则使用null
+          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
+        }
+        
+        // 处理categoryId
+        let processedCategoryId = listing.categoryId;
+        if (processedCategoryId && typeof processedCategoryId === 'string') {
+          // 尝试转换为数字
+          const parsedCategoryId = parseInt(processedCategoryId);
+          // 如果转换结果是NaN，则使用null
+          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
+        }
+        
+        return {
+          ...listing,
+          vendorId: processedVendorId,
+          categoryId: processedCategoryId
+        };
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error(`Error in getListing with id ${id}:`, error);
+      return undefined;
+    }
   }
 
   async getListingsByVendorId(vendorId: number): Promise<Listing[]> {
