@@ -701,12 +701,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const allListings = await storage.getAllListings();
       
+      if (!allListings || allListings.length === 0) {
+        return res.json([]);
+      }
+      
       // 获取每个商品的供应商信息
       const listingsWithVendorInfo = await Promise.all(
         allListings.map(async (listing) => {
           try {
+            if (!listing || !listing.id) {
+              console.log("Warning: Invalid listing object:", listing);
+              return null;
+            }
+            
             if (!listing.vendorId) {
-              console.log("Warning: Listing without vendorId:", listing.id);
+              console.log(`Warning: Listing without vendorId: ${listing.id}`);
               return { ...listing, vendor: null };
             }
             
@@ -764,17 +773,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             };
           } catch (err) {
-            console.error(`Error processing listing ${listing.id}:`, err);
+            console.error(`Error processing listing ${listing?.id || 'unknown'}:`, err);
             // 返回没有供应商信息的商品
-            return { ...listing, vendor: null };
+            return listing ? { ...listing, vendor: null } : null;
           }
         })
       );
       
-      res.json(listingsWithVendorInfo);
+      // 过滤掉null值
+      const validListings = listingsWithVendorInfo.filter(item => item !== null);
+      
+      res.json(validListings);
     } catch (error: any) {
       console.error("Error in /api/listings/all:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message || "获取商品列表失败" });
     }
   });
 
@@ -783,12 +795,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const pendingListings = await storage.getPendingListings();
       
+      if (!pendingListings || pendingListings.length === 0) {
+        return res.json([]);
+      }
+      
       // 获取每个商品的供应商信息
       const listingsWithVendorInfo = await Promise.all(
         pendingListings.map(async (listing) => {
           try {
+            if (!listing || !listing.id) {
+              console.log("Warning: Invalid pending listing object:", listing);
+              return null;
+            }
+            
             if (!listing.vendorId) {
-              console.log("Warning: Pending listing without vendorId:", listing.id);
+              console.log(`Warning: Pending listing without vendorId: ${listing.id}`);
               return { ...listing, vendor: null };
             }
             
@@ -846,17 +867,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             };
           } catch (err) {
-            console.error(`Error processing pending listing ${listing.id}:`, err);
+            console.error(`Error processing pending listing ${listing?.id || 'unknown'}:`, err);
             // 返回没有供应商信息的商品
-            return { ...listing, vendor: null };
+            return listing ? { ...listing, vendor: null } : null;
           }
         })
       );
       
-      res.json(listingsWithVendorInfo);
+      // 过滤掉null值
+      const validListings = listingsWithVendorInfo.filter(item => item !== null);
+      
+      res.json(validListings);
     } catch (error: any) {
       console.error("Error in /api/listings/pending:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message || "获取待审核商品列表失败" });
     }
   });
 
@@ -1735,32 +1759,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const pendingListings = await storage.getPendingListings();
       
+      if (!pendingListings || pendingListings.length === 0) {
+        return res.json([]);
+      }
+      
       // 获取每个商品的供应商信息
       const listingsWithVendorInfo = await Promise.all(
         pendingListings.map(async (listing) => {
-          const vendor = await storage.getVendorProfile(listing.vendorId);
-          const user = vendor ? await storage.getUser(vendor.userId) : null;
-          
-          return {
-            ...listing,
-            vendor: vendor ? {
-              id: vendor.id,
-              companyName: vendor.companyName,
-              verificationStatus: vendor.verificationStatus,
-              user: user ? {
-                id: user.id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                avatar: user.avatar
+          try {
+            if (!listing || !listing.id) {
+              console.log("Warning: Invalid pending listing object:", listing);
+              return null;
+            }
+            
+            if (!listing.vendorId) {
+              console.log(`Warning: Listing without vendorId: ${listing.id}`);
+              return { ...listing, vendor: null };
+            }
+            
+            // 确保vendorId是数字或null
+            let vendorId = null;
+            if (listing.vendorId !== null) {
+              if (typeof listing.vendorId === 'string') {
+                const parsedId = parseInt(listing.vendorId);
+                vendorId = isNaN(parsedId) ? null : parsedId;
+              } else if (typeof listing.vendorId === 'number') {
+                vendorId = listing.vendorId;
+              }
+            }
+            
+            if (vendorId === null) {
+              console.log(`Warning: Invalid vendorId format for listing ${listing.id}:`, listing.vendorId);
+              return { ...listing, vendor: null };
+            }
+            
+            const vendor = await storage.getVendorProfile(vendorId);
+            if (!vendor) {
+              console.log(`Warning: Vendor not found for listing ${listing.id}, vendorId:`, vendorId);
+              return { ...listing, vendor: null };
+            }
+            
+            // 处理用户ID转换问题
+            let user = null;
+            if (vendor.userId) {
+              // 确保userId是数字
+              let userId = null;
+              if (typeof vendor.userId === 'string') {
+                const parsedId = parseInt(vendor.userId);
+                userId = isNaN(parsedId) ? null : parsedId;
+              } else if (typeof vendor.userId === 'number') {
+                userId = vendor.userId;
+              }
+              
+              if (userId !== null) {
+                user = await storage.getUser(userId);
+              }
+            }
+            
+            return {
+              ...listing,
+              vendor: vendor ? {
+                id: vendor.id,
+                companyName: vendor.companyName || "未命名公司",
+                verificationStatus: vendor.verificationStatus,
+                user: user ? {
+                  id: user.id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  avatar: user.avatar
+                } : null
               } : null
-            } : null
-          };
+            };
+          } catch (err) {
+            console.error(`Error processing pending listing ${listing?.id || 'unknown'}:`, err);
+            // 返回没有供应商信息的商品
+            return listing ? { ...listing, vendor: null } : null;
+          }
         })
       );
       
-      res.json(listingsWithVendorInfo);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+      // 过滤掉null值
+      const validListings = listingsWithVendorInfo.filter(item => item !== null);
+      
+      res.json(validListings);
+    } catch (error: any) {
+      console.error("Error in /api/admin/pending-listings:", error);
+      res.status(500).json({ message: error.message || "获取待审核商品列表失败" });
     }
   });
   
