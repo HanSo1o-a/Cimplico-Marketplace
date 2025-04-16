@@ -536,28 +536,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取每个商品的供应商信息
       const listingsWithVendorInfo = await Promise.all(
         allListings.map(async (listing) => {
-          const vendor = await storage.getVendorProfile(listing.vendorId);
-          const user = vendor ? await storage.getUser(vendor.userId) : null;
-          
-          return {
-            ...listing,
-            vendor: vendor ? {
-              id: vendor.id,
-              companyName: vendor.companyName,
-              verificationStatus: vendor.verificationStatus,
-              user: user ? {
-                id: user.id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                avatar: user.avatar
+          try {
+            const vendorId = typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId;
+            const vendor = await storage.getVendorProfile(vendorId);
+            
+            // 处理用户ID转换问题
+            let user = null;
+            if (vendor) {
+              const userId = typeof vendor.userId === 'string' ? parseInt(vendor.userId) : vendor.userId;
+              user = await storage.getUser(userId);
+            }
+            
+            return {
+              ...listing,
+              vendor: vendor ? {
+                id: vendor.id,
+                companyName: vendor.companyName,
+                verificationStatus: vendor.verificationStatus,
+                user: user ? {
+                  id: user.id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  avatar: user.avatar
+                } : null
               } : null
-            } : null
-          };
+            };
+          } catch (err) {
+            console.error(`Error processing listing ${listing.id}:`, err);
+            return listing; // 返回没有供应商信息的商品
+          }
         })
       );
       
       res.json(listingsWithVendorInfo);
     } catch (error) {
+      console.error("Error in /api/listings/all:", error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -570,28 +583,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取每个商品的供应商信息
       const listingsWithVendorInfo = await Promise.all(
         pendingListings.map(async (listing) => {
-          const vendor = await storage.getVendorProfile(listing.vendorId);
-          const user = vendor ? await storage.getUser(vendor.userId) : null;
-          
-          return {
-            ...listing,
-            vendor: vendor ? {
-              id: vendor.id,
-              companyName: vendor.companyName,
-              verificationStatus: vendor.verificationStatus,
-              user: user ? {
-                id: user.id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                avatar: user.avatar
+          try {
+            const vendorId = typeof listing.vendorId === 'string' ? parseInt(listing.vendorId) : listing.vendorId;
+            const vendor = await storage.getVendorProfile(vendorId);
+            
+            // 处理用户ID转换问题
+            let user = null;
+            if (vendor) {
+              const userId = typeof vendor.userId === 'string' ? parseInt(vendor.userId) : vendor.userId;
+              user = await storage.getUser(userId);
+            }
+            
+            return {
+              ...listing,
+              vendor: vendor ? {
+                id: vendor.id,
+                companyName: vendor.companyName,
+                verificationStatus: vendor.verificationStatus,
+                user: user ? {
+                  id: user.id,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  avatar: user.avatar
+                } : null
               } : null
-            } : null
-          };
+            };
+          } catch (err) {
+            console.error(`Error processing pending listing ${listing.id}:`, err);
+            return listing; // 返回没有供应商信息的商品
+          }
         })
       );
       
       res.json(listingsWithVendorInfo);
     } catch (error) {
+      console.error("Error in /api/listings/pending:", error);
       res.status(500).json({ message: error.message });
     }
   });
