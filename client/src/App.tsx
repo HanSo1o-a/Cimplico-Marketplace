@@ -18,6 +18,7 @@ import VendorDashboard from "@/pages/vendor-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminHomePage from "@/pages/admin/AdminHomePage";
 import AdminProductsPage from "@/pages/admin/AdminProductsPage";
+import AdminCategoriesPage from "@/pages/admin/AdminCategoriesPage";
 import AdminVendorsPage from "@/pages/admin/AdminVendorsPage";
 import AdminOrdersPage from "@/pages/admin/AdminOrdersPage";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
