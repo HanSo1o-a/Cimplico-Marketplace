@@ -26,19 +26,35 @@ export async function apiRequest(
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
+  fallbackData?: T;
 }) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
+  ({ on401: unauthorizedBehavior, fallbackData }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
-    });
+    try {
+      const res = await fetch(queryKey[0] as string, {
+        credentials: "include",
+      });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        return fallbackData || null;
+      }
+
+      if (!res.ok) {
+        if (fallbackData !== undefined) {
+          console.warn(`Request to ${queryKey[0]} failed with status ${res.status}, using fallback data`);
+          return fallbackData;
+        }
+        await throwIfResNotOk(res);
+      }
+      
+      return await res.json();
+    } catch (error) {
+      if (fallbackData !== undefined) {
+        console.warn(`Error fetching ${queryKey[0]}:`, error);
+        return fallbackData;
+      }
+      throw error;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
 
 export const queryClient = new QueryClient({

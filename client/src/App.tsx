@@ -39,22 +39,28 @@ function UserRouter() {
       <ProtectedRoute path="/cart" component={Cart} />
       <ProtectedRoute path="/checkout" component={Checkout} />
       <ProtectedRoute path="/orders/:id" component={OrderDetail} />
-      <Route component={NotFound} />
+      <Route path="*" component={NotFound} />
     </Switch>
   );
 }
 
 // 管理员路由
 function AdminRouter() {
+  const renderAdminHomePage = () => <AdminHomePage />;
+  const renderAdminProductsPage = () => <AdminProductsPage />;
+  const renderAdminVendorsPage = () => <AdminVendorsPage />;
+  const renderAdminOrdersPage = () => <AdminOrdersPage />;
+  const renderAdminDashboard = () => <AdminDashboard />;
+  
   return (
     <Switch>
-      <ProtectedRoute path="/admin" role={UserRole.ADMIN} component={AdminHomePage} />
-      <ProtectedRoute path="/admin/products" role={UserRole.ADMIN} component={AdminProductsPage} />
-      <ProtectedRoute path="/admin/vendors" role={UserRole.ADMIN} component={AdminVendorsPage} />
-      <ProtectedRoute path="/admin/orders" role={UserRole.ADMIN} component={AdminOrdersPage} />
-      <ProtectedRoute path="/admin-dashboard" role={UserRole.ADMIN} component={AdminDashboard} />
+      <Route path="/admin" component={renderAdminHomePage} />
+      <Route path="/admin/products" component={renderAdminProductsPage} />
+      <Route path="/admin/vendors" component={renderAdminVendorsPage} />
+      <Route path="/admin/orders" component={renderAdminOrdersPage} />
+      <Route path="/admin-dashboard" component={renderAdminDashboard} />
       <Route path="/auth" component={AuthPage} />
-      <Route component={NotFound} />
+      <Route path="*" component={NotFound} />
     </Switch>
   );
 }

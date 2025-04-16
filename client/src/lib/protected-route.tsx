@@ -6,9 +6,32 @@ import { UserRole } from "@shared/schema";
 
 type ProtectedRouteProps = {
   path: string;
-  component: () => React.JSX.Element;
+  component: () => React.ReactNode;
   role?: UserRole | UserRole[];
 };
+
+function AccessDenied() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
+      <h1 className="text-2xl font-bold text-red-600 mb-2">{t("auth.accessDenied")}</h1>
+      <p className="mb-4">{t("auth.noPermission")}</p>
+      <a href="/" className="text-primary hover:underline">
+        {t("common.backToHome")}
+      </a>
+    </div>
+  );
+}
+
+function LoadingScreen() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <span className="ml-2">{t("common.loading")}</span>
+    </div>
+  );
+}
 
 export function ProtectedRoute({
   path,
@@ -18,44 +41,29 @@ export function ProtectedRoute({
   const { user, isLoading } = useAuth();
   const { t } = useTranslation();
 
-  if (isLoading) {
-    return (
-      <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">{t("common.loading")}</span>
-        </div>
-      </Route>
-    );
-  }
+  return (
+    <Route path={path}>
+      {() => {
+        if (isLoading) {
+          return <LoadingScreen />;
+        }
 
-  if (!user) {
-    return (
-      <Route path={path}>
-        <Redirect to="/auth" />
-      </Route>
-    );
-  }
+        if (!user) {
+          return <Redirect to="/auth" />;
+        }
 
-  // 如果指定了角色要求，检查用户角色
-  if (role) {
-    const requiredRoles = Array.isArray(role) ? role : [role];
-    const hasRequiredRole = requiredRoles.includes(user.role as UserRole) || user.role === UserRole.ADMIN;
-    
-    if (!hasRequiredRole) {
-      return (
-        <Route path={path}>
-          <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
-            <h1 className="text-2xl font-bold text-red-600 mb-2">{t("auth.accessDenied")}</h1>
-            <p className="mb-4">{t("auth.noPermission")}</p>
-            <a href="/" className="text-primary hover:underline">
-              {t("common.backToHome")}
-            </a>
-          </div>
-        </Route>
-      );
-    }
-  }
+        // 如果指定了角色要求，检查用户角色
+        if (role) {
+          const requiredRoles = Array.isArray(role) ? role : [role];
+          const hasRequiredRole = requiredRoles.includes(user.role as UserRole) || user.role === UserRole.ADMIN;
+          
+          if (!hasRequiredRole) {
+            return <AccessDenied />;
+          }
+        }
 
-  return <Route path={path} component={Component} />;
+        return <Component />;
+      }}
+    </Route>
+  );
 }
