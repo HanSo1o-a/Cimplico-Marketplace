@@ -527,6 +527,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: error.message });
     }
   });
+  
+  // 获取所有商品 (仅管理员)
+  app.get("/api/listings/all", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const allListings = await storage.getAllListings();
+      
+      // 获取每个商品的供应商信息
+      const listingsWithVendorInfo = await Promise.all(
+        allListings.map(async (listing) => {
+          const vendor = await storage.getVendorProfile(listing.vendorId);
+          const user = vendor ? await storage.getUser(vendor.userId) : null;
+          
+          return {
+            ...listing,
+            vendor: vendor ? {
+              id: vendor.id,
+              companyName: vendor.companyName,
+              verificationStatus: vendor.verificationStatus,
+              user: user ? {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.avatar
+              } : null
+            } : null
+          };
+        })
+      );
+      
+      res.json(listingsWithVendorInfo);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 获取待审核的商品 (仅管理员)
+  app.get("/api/listings/pending", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const pendingListings = await storage.getPendingListings();
+      
+      // 获取每个商品的供应商信息
+      const listingsWithVendorInfo = await Promise.all(
+        pendingListings.map(async (listing) => {
+          const vendor = await storage.getVendorProfile(listing.vendorId);
+          const user = vendor ? await storage.getUser(vendor.userId) : null;
+          
+          return {
+            ...listing,
+            vendor: vendor ? {
+              id: vendor.id,
+              companyName: vendor.companyName,
+              verificationStatus: vendor.verificationStatus,
+              user: user ? {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.avatar
+              } : null
+            } : null
+          };
+        })
+      );
+      
+      res.json(listingsWithVendorInfo);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   // 收藏商品
   app.post("/api/users/favorites", async (req, res) => {
@@ -1267,7 +1335,233 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
+  // 管理员API路由
+  // 管理员统计数据
+  app.get("/api/admin/stats", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      // 获取基础数据
+      const users = await storage.getAllUsers();
+      const vendors = await storage.getAllVendors();
+      const listings = await storage.getAllListings();
+      const orders = await storage.getAllOrders();
+      const payments = await storage.getAllPayments();
+      
+      // 计算统计数据
+      const totalUsers = users.length;
+      const totalVendors = vendors.length;
+      const pendingVendors = vendors.filter(v => v.verificationStatus === VendorVerificationStatus.PENDING).length;
+      const activeListings = listings.filter(l => l.status === ListingStatus.ACTIVE).length;
+      const pendingListings = listings.filter(l => l.status === ListingStatus.PENDING).length;
+      const totalOrders = orders.length;
+      const completedOrders = orders.filter(o => o.status === OrderStatus.COMPLETED).length;
+      const totalSales = payments
+        .filter(p => p.status === PaymentStatus.COMPLETED)
+        .reduce((sum, p) => sum + p.amount, 0);
+      
+      res.json({
+        users: {
+          total: totalUsers,
+          admins: users.filter(u => u.role === UserRole.ADMIN).length,
+          vendors: users.filter(u => u.role === UserRole.VENDOR).length,
+          customers: users.filter(u => u.role === UserRole.USER).length
+        },
+        vendors: {
+          total: totalVendors,
+          pending: pendingVendors,
+          approved: vendors.filter(v => v.verificationStatus === VendorVerificationStatus.APPROVED).length,
+          rejected: vendors.filter(v => v.verificationStatus === VendorVerificationStatus.REJECTED).length
+        },
+        listings: {
+          total: listings.length,
+          active: activeListings,
+          pending: pendingListings,
+          rejected: listings.filter(l => l.status === ListingStatus.REJECTED).length,
+          draft: listings.filter(l => l.status === ListingStatus.DRAFT).length
+        },
+        orders: {
+          total: totalOrders,
+          created: orders.filter(o => o.status === OrderStatus.CREATED).length,
+          paid: orders.filter(o => o.status === OrderStatus.PAID).length,
+          completed: completedOrders,
+          cancelled: orders.filter(o => o.status === OrderStatus.CANCELLED).length
+        },
+        sales: {
+          total: totalSales,
+          currency: "CNY"
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 获取待审核的供应商列表 (仅管理员)
+  app.get("/api/admin/pending-vendors", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const pendingVendors = await storage.getPendingVendors();
+      
+      // 获取每个供应商的用户信息
+      const vendorsWithUserInfo = await Promise.all(
+        pendingVendors.map(async (vendor) => {
+          const user = await storage.getUser(vendor.userId);
+          return {
+            ...vendor,
+            user: user ? { 
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              avatar: user.avatar
+            } : null
+          };
+        })
+      );
+      
+      res.json(vendorsWithUserInfo);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 获取待审核的商品列表 (仅管理员)
+  app.get("/api/admin/pending-listings", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const pendingListings = await storage.getPendingListings();
+      
+      // 获取每个商品的供应商信息
+      const listingsWithVendorInfo = await Promise.all(
+        pendingListings.map(async (listing) => {
+          const vendor = await storage.getVendorProfile(listing.vendorId);
+          const user = vendor ? await storage.getUser(vendor.userId) : null;
+          
+          return {
+            ...listing,
+            vendor: vendor ? {
+              id: vendor.id,
+              companyName: vendor.companyName,
+              verificationStatus: vendor.verificationStatus,
+              user: user ? {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.avatar
+              } : null
+            } : null
+          };
+        })
+      );
+      
+      res.json(listingsWithVendorInfo);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 获取所有用户 (仅管理员)
+  app.get("/api/users/all", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 更新用户信息 (仅管理员)
+  app.patch("/api/users/:id", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { role, status } = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, { role, status });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "用户不存在" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 获取所有供应商 (仅管理员)
+  app.get("/api/vendors/all", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const vendors = await storage.getAllVendors();
+      
+      // 获取每个供应商的用户信息
+      const vendorsWithUserInfo = await Promise.all(
+        vendors.map(async (vendor) => {
+          const user = await storage.getUser(vendor.userId);
+          return {
+            ...vendor,
+            user: user ? { 
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              avatar: user.avatar
+            } : null
+          };
+        })
+      );
+      
+      res.json(vendorsWithUserInfo);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 获取所有订单 (仅管理员)
+  app.get("/api/orders/all", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const orders = await storage.getAllOrders();
+      
+      // 获取每个订单的用户和支付信息
+      const ordersWithDetails = await Promise.all(
+        orders.map(async (order) => {
+          const user = await storage.getUser(order.userId);
+          const payment = await storage.getPaymentByOrderId(order.id);
+          const orderItems = await storage.getOrderItems(order.id);
+          
+          return {
+            ...order,
+            user: user ? {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName
+            } : null,
+            payment,
+            itemCount: orderItems.length
+          };
+        })
+      );
+      
+      res.json(ordersWithDetails);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 管理员更新订单状态
+  app.patch("/api/admin/orders/:id", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      const updatedOrder = await storage.updateOrderStatus(orderId, status);
+      
+      if (!updatedOrder) {
+        return res.status(404).json({ message: "订单不存在" });
+      }
+      
+      res.json(updatedOrder);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
