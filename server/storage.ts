@@ -1,9 +1,9 @@
 import {
   User, VendorProfile, Listing, Firm, FirmWhitelistedUser, InstalledListing,
-  Order, OrderItem, Payment, Comment, UserSavedListing,
+  Order, OrderItem, Payment, Comment, UserSavedListing, Category,
   InsertUser, InsertVendorProfile, InsertListing, InsertFirm, InsertFirmWhitelistedUser,
   InsertInstalledListing, InsertOrder, InsertOrderItem, InsertPayment, InsertComment,
-  InsertUserSavedListing, OrderStatus, PaymentStatus
+  InsertUserSavedListing, InsertCategory, OrderStatus, PaymentStatus
 } from "@shared/schema";
 import session from "express-session";
 import { DatabaseStorage } from "./storage-db";

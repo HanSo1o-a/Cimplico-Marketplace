@@ -8,7 +8,8 @@ import {
   VendorVerificationStatus,
   OrderStatus,
   PaymentStatus,
-  CommentStatus
+  CommentStatus,
+  insertCategorySchema
 } from "@shared/schema";
 import { i18nMiddleware, t } from "./i18n";
 
@@ -1824,6 +1825,183 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(updatedOrder);
     } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ===========================
+  // 分类管理API路由
+  // ===========================
+  
+  // 获取所有分类
+  app.get("/api/categories", async (req, res) => {
+    try {
+      const categories = await storage.getCategoryWithProductCount();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error in /api/categories:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 获取单个分类
+  app.get("/api/categories/:id", async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      const category = await storage.getCategory(categoryId);
+      
+      if (!category) {
+        return res.status(404).json({ message: "分类不存在" });
+      }
+      
+      // 获取该分类下的商品数量
+      const products = await storage.getListingsByCategoryId(categoryId);
+      
+      res.json({
+        ...category,
+        productsCount: products.length
+      });
+    } catch (error) {
+      console.error("Error in /api/categories/:id:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 通过slug获取分类
+  app.get("/api/categories/slug/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const category = await storage.getCategoryBySlug(slug);
+      
+      if (!category) {
+        return res.status(404).json({ message: "分类不存在" });
+      }
+      
+      // 获取该分类下的商品数量
+      const products = await storage.getListingsByCategoryId(category.id);
+      
+      res.json({
+        ...category,
+        productsCount: products.length
+      });
+    } catch (error) {
+      console.error("Error in /api/categories/slug/:slug:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 创建分类(仅管理员)
+  app.post("/api/categories", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const categoryData = insertCategorySchema.parse(req.body);
+      
+      // 检查slug是否已存在
+      const existingCategory = await storage.getCategoryBySlug(categoryData.slug);
+      if (existingCategory) {
+        return res.status(400).json({ message: "Slug已被使用，请使用其他slug" });
+      }
+      
+      const newCategory = await storage.createCategory(categoryData);
+      res.status(201).json(newCategory);
+    } catch (error) {
+      console.error("Error in POST /api/categories:", error);
+      if (error.name === "ZodError") {
+        return res.status(400).json({ 
+          message: "验证错误",
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 更新分类(仅管理员)
+  app.patch("/api/categories/:id", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      const categoryData = req.body;
+      
+      // 如果要更新slug，检查是否已存在
+      if (categoryData.slug) {
+        const existingCategory = await storage.getCategoryBySlug(categoryData.slug);
+        if (existingCategory && existingCategory.id !== categoryId) {
+          return res.status(400).json({ message: "Slug已被使用，请使用其他slug" });
+        }
+      }
+      
+      const updatedCategory = await storage.updateCategory(categoryId, categoryData);
+      
+      if (!updatedCategory) {
+        return res.status(404).json({ message: "分类不存在" });
+      }
+      
+      res.json(updatedCategory);
+    } catch (error) {
+      console.error("Error in PATCH /api/categories/:id:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 删除分类(仅管理员)
+  app.delete("/api/categories/:id", checkRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      
+      // 检查分类是否存在
+      const category = await storage.getCategory(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "分类不存在" });
+      }
+      
+      // 删除分类
+      const result = await storage.deleteCategory(categoryId);
+      
+      res.json({ success: result });
+    } catch (error) {
+      console.error("Error in DELETE /api/categories/:id:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 获取分类下的商品
+  app.get("/api/categories/:id/listings", async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      
+      // 检查分类是否存在
+      const category = await storage.getCategory(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "分类不存在" });
+      }
+      
+      // 获取该分类的商品
+      const listings = await storage.getListingsByCategoryId(categoryId);
+      
+      // 获取每个商品的供应商信息
+      const listingsWithVendorInfo = await Promise.all(
+        listings.map(async (listing) => {
+          const vendor = await storage.getVendorProfile(listing.vendorId);
+          const user = vendor ? await storage.getUser(vendor.userId) : null;
+          
+          return {
+            ...listing,
+            vendor: vendor ? {
+              id: vendor.id,
+              companyName: vendor.companyName,
+              user: user ? {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.avatar
+              } : null
+            } : null
+          };
+        })
+      );
+      
+      res.json(listingsWithVendorInfo);
+    } catch (error) {
+      console.error("Error in /api/categories/:id/listings:", error);
       res.status(500).json({ message: error.message });
     }
   });
