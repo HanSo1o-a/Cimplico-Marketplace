@@ -52,6 +52,7 @@ const CategoryManager: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: "",
+    slug: "",
     description: "",
   });
   
@@ -83,7 +84,7 @@ const CategoryManager: React.FC = () => {
 
   // 创建分类
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string }) => {
+    mutationFn: async (data: { name: string; slug: string; description: string }) => {
       const res = await apiRequest("POST", "/api/categories", data);
       if (!res.ok) {
         throw new Error(t("admin.categoryCreateFailed"));
@@ -93,7 +94,7 @@ const CategoryManager: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
       setIsCreateDialogOpen(false);
-      setFormData({ name: "", description: "" });
+      setFormData({ name: "", slug: "", description: "" });
       toast({
         title: t("admin.categoryCreated"),
         description: t("admin.categoryCreatedDesc"),
@@ -115,7 +116,7 @@ const CategoryManager: React.FC = () => {
       data,
     }: {
       id: number;
-      data: { name: string; description: string };
+      data: { name: string; slug: string; description: string };
     }) => {
       const res = await apiRequest("PATCH", `/api/categories/${id}`, data);
       if (!res.ok) {
@@ -193,6 +194,7 @@ const CategoryManager: React.FC = () => {
     setSelectedCategory(category);
     setFormData({
       name: category.name,
+      slug: category.slug,
       description: category.description || "",
     });
     setIsEditDialogOpen(true);
@@ -306,6 +308,23 @@ const CategoryManager: React.FC = () => {
               </div>
               <div>
                 <label
+                  htmlFor="slug"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {t("admin.categorySlug")}
+                </label>
+                <Input
+                  id="slug"
+                  className="mt-1"
+                  value={formData.slug}
+                  onChange={(e) =>
+                    setFormData({ ...formData, slug: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <label
                   htmlFor="description"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
@@ -361,6 +380,23 @@ const CategoryManager: React.FC = () => {
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-slug"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {t("admin.categorySlug")}
+                </label>
+                <Input
+                  id="edit-slug"
+                  className="mt-1"
+                  value={formData.slug}
+                  onChange={(e) =>
+                    setFormData({ ...formData, slug: e.target.value })
                   }
                   required
                 />
