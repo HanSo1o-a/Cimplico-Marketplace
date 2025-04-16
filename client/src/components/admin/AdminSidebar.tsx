@@ -4,16 +4,23 @@ import { useLocation } from "wouter";
 import { UserRole } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { Package, Store, ShoppingCart, LayoutDashboard } from "lucide-react";
+import { Package, Store, ShoppingCart, LayoutDashboard, LogOut } from "lucide-react";
 
 interface AdminSidebarProps {
-  active: "dashboard" | "products" | "vendors" | "orders";
+  active?: "dashboard" | "products" | "vendors" | "orders";
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ active }) => {
   const { t } = useTranslation();
-  const [_, navigate] = useLocation();
-  const { user } = useAuth();
+  const [location, navigate] = useLocation();
+  const { user, logoutMutation } = useAuth();
+  
+  // 根据当前URL路径自动确定活动项
+  const currentPath = location;
+  const currentActive = active || 
+    (currentPath.includes('/admin/products') ? 'products' : 
+     currentPath.includes('/admin/vendors') ? 'vendors' : 
+     currentPath.includes('/admin/orders') ? 'orders' : 'dashboard');
 
   if (!user || user.role !== UserRole.ADMIN) {
     return null;
@@ -46,8 +53,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ active }) => {
     },
   ];
 
+  const handleLogout = () => {
+    logoutMutation.mutate();
+    navigate('/auth');
+  };
+
   return (
-    <div className="w-64 min-h-screen border-r border-gray-200 p-4">
+    <div className="fixed left-0 top-0 w-64 min-h-screen border-r border-gray-200 p-4 bg-white">
       <h2 className="text-2xl font-bold mb-6">{t("admin.dashboard")}</h2>
       <nav className="space-y-1">
         {menuItems.map((item) => (
@@ -56,7 +68,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ active }) => {
             onClick={item.onClick}
             className={cn(
               "flex items-center w-full px-3 py-3 text-left rounded-md transition-colors",
-              active === item.id
+              currentActive === item.id
                 ? "bg-primary text-white"
                 : "hover:bg-gray-100"
             )}
@@ -65,6 +77,16 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ active }) => {
             {item.label}
           </button>
         ))}
+        
+        <div className="pt-6 mt-6 border-t border-gray-200">
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full px-3 py-3 text-left rounded-md text-red-500 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="mr-2 h-5 w-5" />
+            {t("auth.logout")}
+          </button>
+        </div>
       </nav>
     </div>
   );

@@ -215,7 +215,7 @@ const HomePage = () => {
                       <div className="aspect-square bg-gray-100 flex items-center justify-center">
                         <div className="w-full h-full flex items-center justify-center border-b">
                           <img
-                            src={product.imageUrl || `/placeholder-product-${product.id % 6 + 1}.svg`}
+                            src={product.imageUrl ? `/uploads/${product.imageUrl}` : `/placeholder-product-${product.id % 6 + 1}.svg`}
                             alt={product.title}
                             className="max-w-full max-h-full object-contain"
                             onError={(e) => {

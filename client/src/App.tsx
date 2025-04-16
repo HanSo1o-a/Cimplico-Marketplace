@@ -1,11 +1,12 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Auth0Provider } from "@/hooks/use-auth0";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { UserRole } from "@shared/schema";
+import { useEffect } from "react";
 
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
@@ -23,8 +24,10 @@ import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
 import OrderDetail from "@/pages/order-detail";
 import MainLayout from "@/components/layout/MainLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 
-function Router() {
+// 用户路由
+function UserRouter() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
@@ -33,12 +36,6 @@ function Router() {
       <Route path="/product/:id" component={ProductDetail} />
       <ProtectedRoute path="/profile" component={UserProfile} />
       <ProtectedRoute path="/vendor-dashboard" role={UserRole.VENDOR} component={VendorDashboard} />
-      {/* 管理员路由 */}
-      <ProtectedRoute path="/admin" role={UserRole.ADMIN} component={AdminHomePage} />
-      <ProtectedRoute path="/admin/products" role={UserRole.ADMIN} component={AdminProductsPage} />
-      <ProtectedRoute path="/admin/vendors" role={UserRole.ADMIN} component={AdminVendorsPage} />
-      <ProtectedRoute path="/admin/orders" role={UserRole.ADMIN} component={AdminOrdersPage} />
-      <ProtectedRoute path="/admin-dashboard" role={UserRole.ADMIN} component={AdminDashboard} />
       <ProtectedRoute path="/cart" component={Cart} />
       <ProtectedRoute path="/checkout" component={Checkout} />
       <ProtectedRoute path="/orders/:id" component={OrderDetail} />
@@ -47,14 +44,62 @@ function Router() {
   );
 }
 
+// 管理员路由
+function AdminRouter() {
+  return (
+    <Switch>
+      <ProtectedRoute path="/admin" role={UserRole.ADMIN} component={AdminHomePage} />
+      <ProtectedRoute path="/admin/products" role={UserRole.ADMIN} component={AdminProductsPage} />
+      <ProtectedRoute path="/admin/vendors" role={UserRole.ADMIN} component={AdminVendorsPage} />
+      <ProtectedRoute path="/admin/orders" role={UserRole.ADMIN} component={AdminOrdersPage} />
+      <ProtectedRoute path="/admin-dashboard" role={UserRole.ADMIN} component={AdminDashboard} />
+      <Route path="/auth" component={AuthPage} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+// 路由器选择组件
+function RouterSelector() {
+  const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  
+  // 如果用户是管理员并且不在管理员路径，则自动重定向到管理员主页
+  useEffect(() => {
+    if (!isLoading && user && user.role === UserRole.ADMIN) {
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith('/admin')) {
+        setLocation('/admin');
+      }
+    }
+  }, [user, isLoading, setLocation]);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">加载中...</div>;
+  }
+
+  // 根据用户角色选择不同的路由和布局
+  if (user && user.role === UserRole.ADMIN) {
+    return (
+      <AdminLayout>
+        <AdminRouter />
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <MainLayout>
+      <UserRouter />
+    </MainLayout>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Auth0Provider>
-          <MainLayout>
-            <Router />
-          </MainLayout>
+          <RouterSelector />
           <Toaster />
         </Auth0Provider>
       </AuthProvider>
