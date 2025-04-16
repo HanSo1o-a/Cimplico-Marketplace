@@ -203,17 +203,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPendingVendors(): Promise<VendorProfile[]> {
-    return await db
-      .select()
-      .from(vendorProfiles)
-      .where(eq(vendorProfiles.verificationStatus, VendorVerificationStatus.PENDING));
+    try {
+      const result = await db
+        .select()
+        .from(vendorProfiles)
+        .where(eq(vendorProfiles.verificationStatus, VendorVerificationStatus.PENDING));
+      
+      // 处理userId如果是字符串
+      return result.map(vendor => {
+        let processedUserId = vendor.userId;
+        if (typeof processedUserId === 'string') {
+          // 尝试转换为数字
+          const parsedUserId = parseInt(processedUserId);
+          // 如果转换结果是NaN，则使用null
+          processedUserId = isNaN(parsedUserId) ? null : parsedUserId;
+        }
+        
+        return {
+          ...vendor,
+          userId: processedUserId
+        };
+      });
+    } catch (error) {
+      console.error("Error in getPendingVendors:", error);
+      return [];
+    }
   }
 
   async getApprovedVendors(): Promise<VendorProfile[]> {
-    return await db
-      .select()
-      .from(vendorProfiles)
-      .where(eq(vendorProfiles.verificationStatus, VendorVerificationStatus.APPROVED));
+    try {
+      const result = await db
+        .select()
+        .from(vendorProfiles)
+        .where(eq(vendorProfiles.verificationStatus, VendorVerificationStatus.APPROVED));
+      
+      // 处理userId如果是字符串
+      return result.map(vendor => {
+        let processedUserId = vendor.userId;
+        if (typeof processedUserId === 'string') {
+          // 尝试转换为数字
+          const parsedUserId = parseInt(processedUserId);
+          // 如果转换结果是NaN，则使用null
+          processedUserId = isNaN(parsedUserId) ? null : parsedUserId;
+        }
+        
+        return {
+          ...vendor,
+          userId: processedUserId
+        };
+      });
+    } catch (error) {
+      console.error("Error in getApprovedVendors:", error);
+      return [];
+    }
   }
 
   //=======================
