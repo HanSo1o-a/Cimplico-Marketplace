@@ -145,7 +145,7 @@ const VendorDashboard = () => {
 
     const matchesStatus = statusFilter === "all" 
       ? true 
-      : product.status === statusFilter;
+      : product?.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   }) : [];
@@ -388,7 +388,7 @@ const VendorDashboard = () => {
                                 "bg-yellow-100 text-yellow-800"
                               }`}
                             >
-                              {t(`order.${order.status.toLowerCase()}`)}
+                              {t(`order.${order.status?.toLowerCase() || "unknown"}`)}
                             </span>
                           </div>
                         </div>
@@ -517,14 +517,14 @@ const VendorDashboard = () => {
                                 <TableCell>
                                   <span 
                                     className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                      product.status === "ACTIVE" ? "bg-green-100 text-green-800" :
-                                      product.status === "PENDING" ? "bg-yellow-100 text-yellow-800" :
-                                      product.status === "REJECTED" ? "bg-red-100 text-red-800" :
-                                      product.status === "DRAFT" ? "bg-blue-100 text-blue-800" :
+                                      product?.status === "ACTIVE" ? "bg-green-100 text-green-800" :
+                                      product?.status === "PENDING" ? "bg-yellow-100 text-yellow-800" :
+                                      product?.status === "REJECTED" ? "bg-red-100 text-red-800" :
+                                      product?.status === "DRAFT" ? "bg-blue-100 text-blue-800" :
                                       "bg-neutral-100 text-neutral-800"
                                     }`}
                                   >
-                                    {t(`product.${product.status ? product.status.toLowerCase() : 'unknown'}`)}
+                                    {t(`product.${product.status ? product.status?.toLowerCase() || "unknown" : 'unknown'}`)}
                                   </span>
                                 </TableCell>
                                 <TableCell>{product.category || t('common.none')}</TableCell>
@@ -699,7 +699,7 @@ const VendorDashboard = () => {
                                       "bg-yellow-100 text-yellow-800"
                                     }`}
                                   >
-                                    {t(`order.${order.status.toLowerCase()}`)}
+                                    {t(`order.${order.status?.toLowerCase() || "unknown"}`)}
                                   </span>
                                 </TableCell>
                                 <TableCell>
