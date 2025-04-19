@@ -72,7 +72,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
       price: product?.price || 0,
       type: product?.type || ListingType.DIGITAL,
       category: product?.category || "financial",
-      isFeatured: product?.isFeatured || false,
     },
   });
 
@@ -99,7 +98,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
         queryClient.invalidateQueries({ queryKey: [`/api/listings/${product.id}`] });
       } else {
         // 创建新产品
-        await apiRequest("POST", "/api/listings", productData);
+        if (!vendorId) {
+          throw new Error("缺少供应商ID");
+        }
+        await apiRequest("POST", `/api/vendors/${vendorId}/listings`, productData);
         toast({
           title: t("product.createSuccess"),
           description: t("product.productCreated"),
@@ -370,28 +372,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
               </FormDescription>
             </div>
 
-            <FormField
-              control={form.control}
-              name="isFeatured"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">
-                      {t("product.featured")}
-                    </FormLabel>
-                    <FormDescription>
-                      {t("product.featuredDescription")}
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+
 
             <Button
               type="submit"
