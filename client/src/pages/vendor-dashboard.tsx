@@ -139,8 +139,8 @@ const VendorDashboard = () => {
   // Filter products based on search and status
   const filteredProducts = products ? products.filter(product => {
     const matchesSearch = searchQuery 
-      ? product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+      ? (product.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+        (product.description?.toLowerCase() || '').includes(searchQuery.toLowerCase())
       : true;
 
     const matchesStatus = statusFilter === "all" 
