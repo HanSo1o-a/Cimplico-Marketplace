@@ -583,7 +583,7 @@ const VendorDashboard = () => {
                     </DialogTitle>
                   </DialogHeader>
                   <ProductForm 
-                    vendorId={vendorProfile.id}
+                    vendorId={Number(vendorProfile.id)}
                     product={editingProduct}
                     onSuccess={() => {
                       setShowAddProductForm(false);

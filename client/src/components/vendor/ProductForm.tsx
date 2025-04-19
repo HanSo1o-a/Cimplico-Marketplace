@@ -83,9 +83,13 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
       const productData = {
         ...values,
         tags: tags,
-        images: uploadedImages,
-        vendorId: vendorId
+        images: uploadedImages
       };
+      
+      // 确保vendorId不会被重复添加
+      if (!product && vendorId) {
+        productData.vendorId = vendorId;
+      }
 
       if (product) {
         // 更新现有产品
@@ -371,8 +375,6 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
                 {t("product.imagesHelp")}
               </FormDescription>
             </div>
-
-
 
             <Button
               type="submit"
