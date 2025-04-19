@@ -49,10 +49,11 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface ProductFormProps {
   product?: any; // 现有产品数据，用于编辑
+  vendorId?: number; // 供应商ID
   onSuccess?: () => void;
 }
 
-const ProductForm: React.FC<ProductFormProps> = ({ product, onSuccess }) => {
+const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,6 +85,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, onSuccess }) => {
         ...values,
         tags: tags,
         images: uploadedImages,
+        vendorId: vendorId
       };
 
       if (product) {
