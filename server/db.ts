@@ -1,10 +1,7 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import pkg from 'pg';
+const { Pool } = pkg;
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
-
-// 为Neon数据库配置WebSocket构造函数
-neonConfig.webSocketConstructor = ws;
 
 // 检查环境变量
 if (!process.env.DATABASE_URL) {

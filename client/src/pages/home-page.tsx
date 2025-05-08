@@ -8,6 +8,8 @@ import { useState } from "react";
 import { X, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 const HomePage = () => {
   const { t } = useTranslation();
@@ -32,8 +34,17 @@ const HomePage = () => {
   };
 
   // 从API获取商品数据
-  const { data: products = [], isLoading } = useQuery<any[]>({
-    queryKey: ['/api/listings'],
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ["/api/listings"],
+    queryFn: getQueryFn(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // 获取真实分类数据
+  const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ["/api/categories"],
+    queryFn: getQueryFn(),
+    staleTime: 1000 * 60 * 5,
   });
 
   return (
@@ -105,51 +116,28 @@ const HomePage = () => {
               </div>
 
               <div className="space-y-6">
-                {/* Categories Filter */}
+                {/* 分类标签区块，动态渲染 */}
                 <div>
                   <h4 className="font-medium mb-2 uppercase text-sm text-gray-700">{t("filters.categories")}</h4>
-                  <CheckboxGroup className="space-y-2">
-                    <CheckboxItem 
-                      id="calculations" 
-                      label={t("categories.calculations")}
-                      checked={activeFilters.includes(t("categories.calculations"))}
-                      onCheckedChange={() => {
-                        activeFilters.includes(t("categories.calculations"))
-                          ? removeFilter(t("categories.calculations"))
-                          : addFilter(t("categories.calculations"));
-                      }}
-                    />
-                    <CheckboxItem 
-                      id="reports" 
-                      label={t("categories.reports")}
-                      checked={activeFilters.includes(t("categories.reports"))}
-                      onCheckedChange={() => {
-                        activeFilters.includes(t("categories.reports"))
-                          ? removeFilter(t("categories.reports"))
-                          : addFilter(t("categories.reports"));
-                      }}
-                    />
-                    <CheckboxItem 
-                      id="worksheets" 
-                      label={t("categories.worksheets")}
-                      checked={activeFilters.includes(t("categories.worksheets"))}
-                      onCheckedChange={() => {
-                        activeFilters.includes(t("categories.worksheets"))
-                          ? removeFilter(t("categories.worksheets"))
-                          : addFilter(t("categories.worksheets"));
-                      }}
-                    />
-                    <CheckboxItem 
-                      id="procedures" 
-                      label={t("categories.procedures")}
-                      checked={activeFilters.includes(t("categories.procedures"))}
-                      onCheckedChange={() => {
-                        activeFilters.includes(t("categories.procedures"))
-                          ? removeFilter(t("categories.procedures"))
-                          : addFilter(t("categories.procedures"));
-                      }}
-                    />
-                  </CheckboxGroup>
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {isCategoriesLoading ? (
+                      <span>加载分类中...</span>
+                    ) : (
+                      categoriesData.length === 0 ? (
+                        <span>暂无分类</span>
+                      ) : (
+                        categoriesData.map((cat: any) => (
+                          <Badge
+                            key={cat.id}
+                            className={`cursor-pointer ${activeFilters.includes(cat.name) ? 'bg-primary text-white' : 'bg-gray-100 text-gray-800'}`}
+                            onClick={() => addFilter(cat.name)}
+                          >
+                            {cat.name}
+                          </Badge>
+                        ))
+                      )
+                    )}
+                  </div>
                 </div>
 
                 {/* Tags Filter */}
@@ -215,7 +203,7 @@ const HomePage = () => {
                       <div className="aspect-square bg-gray-100 flex items-center justify-center">
                         <div className="w-full h-full flex items-center justify-center border-b">
                           <img
-                            src={product.imageUrl ? `/uploads/${product.imageUrl}` : `/placeholder-product-${product.id % 6 + 1}.svg`}
+                            src={getImageUrl(product.images && product.images.length > 0 ? product.images[0] : product.imageUrl)}
                             alt={product.title}
                             className="max-w-full max-h-full object-contain"
                             onError={(e) => {
@@ -297,7 +285,7 @@ const HomePage = () => {
             </div>
           </div>
           <div className="mt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-            <p>© 2024 Cimplico Marketplace. {t("footer.allRightsReserved")}</p>
+            <p> 2024 Cimplico Marketplace. {t("footer.allRightsReserved")}</p>
             <div className="flex mt-3 md:mt-0">
               <a href="#" className="mr-4 hover:text-gray-900">{t("footer.terms")}</a>
               <a href="#" className="hover:text-gray-900">{t("footer.privacy")}</a>

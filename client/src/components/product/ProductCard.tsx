@@ -22,9 +22,14 @@ import {
   FileCheck
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { getImageUrl } from "@/utils/getImageUrl";
+
+interface ListingWithCategorySlug extends Listing {
+  categorySlug?: string | null;
+}
 
 interface ProductCardProps {
-  product: Listing;
+  product: ListingWithCategorySlug;
   hideActions?: boolean;
   savedInitially?: boolean; // 添加初始收藏状态
   onSaveToggle?: (id: number, isSaved: boolean) => void; // 收藏状态变化回调
@@ -86,14 +91,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
       setIsLoading(true);
       if (isSaved) {
         // 从收藏中移除
-        await apiRequest("DELETE", `/api/users/favorites/${product.id}`);
+        await apiRequest("DELETE", `/api/users/current/favorites/${product.id}`);
         toast({
           title: t("favorites.removed"),
           description: t("favorites.removedDescription"),
         });
       } else {
         // 添加到收藏
-        await apiRequest("POST", "/api/users/favorites", { listingId: product.id });
+        await apiRequest("POST", "/api/users/current/favorites", { listingId: product.id });
         toast({
           title: t("favorites.added"),
           description: t("favorites.addedDescription"),
@@ -165,9 +170,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <div className="aspect-video bg-gradient-to-br from-muted/30 to-muted/60 relative overflow-hidden">
         {product.images && product.images.length > 0 ? (
           <img
-            src={product.images[0]}
+            src={getImageUrl(product.images[0])}
             alt={product.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "/placeholder-product.svg";
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/20">
@@ -197,6 +206,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs py-1.5 px-2.5 rounded-full flex items-center shadow-sm">
             <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 mr-1" />
             <span className="font-medium">{product.rating.toFixed(1)}</span>
+          </div>
+        )}
+        
+        {/* 分类 slug 展示（仅调试/可美化） */}
+        {product.categorySlug && (
+          <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs py-1.5 px-2.5 rounded-full flex items-center shadow-sm">
+            <span className="font-mono">slug: {product.categorySlug}</span>
           </div>
         )}
         

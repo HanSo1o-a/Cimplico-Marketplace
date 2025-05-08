@@ -3,9 +3,9 @@ import { useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, getQueryFn, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Listing, Order, VendorVerificationStatus } from "@shared/schema";
+import { Listing, Order, OrderItem, VendorVerificationStatus } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VendorForm from "@/components/vendor/VendorForm";
 import ProductForm from "@/components/vendor/ProductForm";
@@ -72,6 +72,16 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 
+interface ExtendedOrder extends Order {
+  items?: (OrderItem & { listing?: Partial<Listing> })[];
+  user?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    email?: string;
+  };
+}
+
 const VendorDashboard = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -105,20 +115,43 @@ const VendorDashboard = () => {
 
   // Fetch vendor products
   const { data: products, isLoading: productsLoading, refetch: refetchProducts } = useQuery<Listing[]>({
-    queryKey: ["/api/vendors", vendorProfile?.id, "listings"],
+    queryKey: [`/api/vendors/${vendorProfile?.id}/listings`],
+    queryFn: getQueryFn(),
     enabled: !!vendorProfile && activeTab === "products",
   });
 
   // Fetch vendor orders
-  const { data: orders, isLoading: ordersLoading, refetch: refetchOrders } = useQuery<Order[]>({
-    queryKey: ["/api/vendors", vendorProfile?.id, "orders"],
+  const { data: orders, isLoading: ordersLoading, refetch: refetchOrders } = useQuery<ExtendedOrder[]>({
+    queryKey: [`/api/vendors/${vendorProfile?.id}/orders`],
+    queryFn: getQueryFn(),
     enabled: !!vendorProfile && activeTab === "orders",
+  });
+
+  // 处理订单状态更新
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: number, status: string }) => {
+      return await apiRequest("PATCH", `/api/vendors/${vendorProfile?.id}/orders/${orderId}`, { status });
+    },
+    onSuccess: () => {
+      toast({
+        title: t("vendor.orderUpdated"),
+        description: t("vendor.orderStatusChanged"),
+      });
+      refetchOrders();
+    },
+    onError: (error) => {
+      toast({
+        title: t("vendor.updateFailed"),
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    },
   });
 
   // Delete product mutation
   const deleteProductMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/vendors/${vendorProfile?.id}/listings/${id}`);
+      await apiRequest("DELETE", `/api/listings/${id}`);
     },
     onSuccess: () => {
       toast({
@@ -333,7 +366,7 @@ const VendorDashboard = () => {
                     <CardTitle className="text-3xl">
                       ¥{orders?.reduce((sum, order) => {
                         // Calculate the total for items belonging to this vendor
-                        const vendorItems = order.items?.filter(item => 
+                        const vendorItems = (order.items || []).filter(item => 
                           products?.some(p => p.id === item.listingId)
                         ) || [];
 
@@ -375,7 +408,7 @@ const VendorDashboard = () => {
                             <div>
                               <div className="font-medium">{t("order.number")}: #{order.id}</div>
                               <div className="text-sm text-neutral-500">
-                                {new Date(order.createdAt).toLocaleDateString()}
+                                {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}
                               </div>
                             </div>
                           </div>
@@ -576,7 +609,7 @@ const VendorDashboard = () => {
                   if (!open) setEditingProduct(null);
                 }}
               >
-                <DialogContent className="max-w-3xl">
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
                       {editingProduct ? t("vendor.editProduct") : t("vendor.addProduct")}
@@ -657,6 +690,7 @@ const VendorDashboard = () => {
                             <TableHead>{t("order.date")}</TableHead>
                             <TableHead>{t("order.customer")}</TableHead>
                             <TableHead>{t("order.items")}</TableHead>
+                            <TableHead>{t("order.itemDetails")}</TableHead>
                             <TableHead>{t("order.total")}</TableHead>
                             <TableHead>{t("order.status")}</TableHead>
                             <TableHead>{t("common.actions")}</TableHead>
@@ -665,11 +699,11 @@ const VendorDashboard = () => {
                         <TableBody>
                           {orders.map((order) => {
                             // Calculate total for items belonging to this vendor
-                            const vendorItems = order.items?.filter(item => 
+                            const vendorItems = (order.items || []).filter(item => 
                               products?.some(p => p.id === item.listingId)
                             ) || [];
 
-                            const orderTotal = vendorItems.reduce((sum, item) => 
+                            const orderTotal = vendorItems.reduce((sum: number, item) => 
                               sum + (item.unitPrice * item.quantity), 0
                             );
 
@@ -679,13 +713,25 @@ const VendorDashboard = () => {
                                   #{order.id}
                                 </TableCell>
                                 <TableCell>
-                                  {new Date(order.createdAt).toLocaleDateString()}
+                                  {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}
                                 </TableCell>
                                 <TableCell>
-                                  {order.user?.firstName} {order.user?.lastName}
+                                  {order.user ? `${order.user.firstName} ${order.user.lastName}` : `用户 #${order.userId}`}
                                 </TableCell>
                                 <TableCell>
                                   {vendorItems.length} {t("product.items")}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="max-w-[200px] truncate">
+                                    {vendorItems.map(item => (
+                                      <div key={item.id} className="text-xs">
+                                        {item.listing?.title || `商品 #${item.listingId}`}
+                                      </div>
+                                    )).slice(0, 2)}
+                                    {vendorItems.length > 2 && (
+                                      <div className="text-xs text-neutral-500">+{vendorItems.length - 2} {t("common.more")}</div>
+                                    )}
+                                  </div>
                                 </TableCell>
                                 <TableCell>
                                   ¥{orderTotal.toFixed(2)}
@@ -726,10 +772,9 @@ const VendorDashboard = () => {
                                       {order.status === "PAID" && (
                                         <DropdownMenuItem
                                           onClick={() => {
-                                            // Would update order status in real implementation
-                                            toast({
-                                              title: t("vendor.orderMarkedShipped"),
-                                              description: `Order #${order.id}`,
+                                            updateOrderStatusMutation.mutate({
+                                              orderId: order.id,
+                                              status: "SHIPPED"
                                             });
                                           }}
                                         >
@@ -740,10 +785,9 @@ const VendorDashboard = () => {
                                       {order.status === "SHIPPED" && (
                                         <DropdownMenuItem
                                           onClick={() => {
-                                            // Would update order status in real implementation
-                                            toast({
-                                              title: t("vendor.orderMarkedDelivered"),
-                                              description: `Order #${order.id}`,
+                                            updateOrderStatusMutation.mutate({
+                                              orderId: order.id,
+                                              status: "COMPLETED"
                                             });
                                           }}
                                         >
@@ -754,14 +798,13 @@ const VendorDashboard = () => {
                                       {order.status !== "COMPLETED" && order.status !== "CANCELLED" && (
                                         <DropdownMenuItem
                                           onClick={() => {
-                                            // Would update order status in real implementation
-                                            toast({
-                                              title: t("vendor.orderMarkedCompleted"),
-                                              description: `Order #${order.id}`,
+                                            updateOrderStatusMutation.mutate({
+                                              orderId: order.id,
+                                              status: "CANCELLED"
                                             });
                                           }}
                                         >
-                                          {t("order.markCompleted")}
+                                          {t("order.markCancelled")}
                                         </DropdownMenuItem>
                                       )}
                                     </DropdownMenuContent>
@@ -796,7 +839,7 @@ const VendorDashboard = () => {
                 <VendorForm 
                   vendorProfile={vendorProfile} 
                   onSuccess={() => {
-                    queryClient.invalidateQueries(["/api/user/vendor-profile"]);
+                    queryClient.invalidateQueries({ queryKey: ["/api/user/vendor-profile"] });
                   }}
                 />
               </CardContent>

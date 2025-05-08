@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useCartStore } from "@/store/useCartStore";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Listing, Comment as CommentType, CommentStatus } from "@shared/schema";
 import ProductGrid from "@/components/product/ProductGrid";
@@ -161,6 +161,7 @@ const ProductDetail = () => {
   // Fetch product details
   const { data: product, isLoading, refetch } = useQuery<Listing>({
     queryKey: [`/api/listings/${id}`],
+    queryFn: getQueryFn(),
     onError: () => {
       navigate("/marketplace");
       toast({
@@ -174,6 +175,7 @@ const ProductDetail = () => {
   // Fetch similar products
   const { data: similarProducts } = useQuery<Listing[]>({
     queryKey: ["/api/listings", { category: product?.category, limit: 4 }],
+    queryFn: getQueryFn(),
     enabled: !!product,
   });
 
@@ -212,12 +214,12 @@ const ProductDetail = () => {
 
     try {
       if (product.isSaved) {
-        await apiRequest("DELETE", `/api/users/favorites/${product.id}`);
+        await apiRequest("DELETE", `/api/users/current/favorites/${product.id}`);
         toast({
           title: t("product.removedFromFavorites"),
         });
       } else {
-        await apiRequest("POST", "/api/users/favorites", { listingId: product.id });
+        await apiRequest("POST", "/api/users/current/favorites", { listingId: product.id });
         toast({
           title: t("product.savedToFavorites"),
         });
@@ -227,7 +229,7 @@ const ProductDetail = () => {
       refetch();
       
       // Invalidate favorites cache
-      queryClient.invalidateQueries(["/api/users/favorites"]);
+      queryClient.invalidateQueries({ queryKey: ["/api/users/current/favorites"] });
     } catch (error) {
       toast({
         title: "Error",

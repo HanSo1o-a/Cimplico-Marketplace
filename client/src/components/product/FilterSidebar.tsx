@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,16 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   ]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [freeOnly, setFreeOnly] = useState(false);
+  const [categoryList, setCategoryList] = useState<{ slug: string; name: string }[]>([]);
+
+  useEffect(() => {
+    axios.get("/api/categories").then((res) => {
+      setCategoryList([
+        { slug: "all", name: t("categories.all") },
+        ...res.data.map((c: any) => ({ slug: c.slug, name: c.name })),
+      ]);
+    });
+  }, [t]);
 
   // 应用过滤器
   const applyFilters = () => {
@@ -53,7 +64,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     setPriceRange([0, 1000]);
     setSelectedTags([]);
     setFreeOnly(false);
-    
+
     onFilterChange({
       category: "all",
       minPrice: undefined,
@@ -78,14 +89,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   };
 
   // 内容分类列表
-  const categories = [
-    { id: "all", name: t("categories.all") },
-    { id: "calculation", name: t("categories.calculation") },
-    { id: "checklist", name: t("categories.checklist") },
-    { id: "procedure", name: t("categories.procedure") },
-    { id: "report", name: t("categories.report") },
-    { id: "otherSchedules", name: t("categories.otherSchedules") },
-  ];
+  const categories = categoryList;
 
   // 常用标签列表
   const popularTags = [
@@ -125,13 +129,16 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           <AccordionContent>
             <RadioGroup
               value={selectedCategory}
-              onValueChange={setSelectedCategory}
+              onValueChange={(val) => {
+                setSelectedCategory(val);
+                onFilterChange({ category: val });
+              }}
               className="space-y-2"
             >
               {categories.map((category) => (
-                <div key={category.id} className="flex items-center space-x-2">
-                  <RadioGroupItem value={category.id} id={`category-${category.id}`} />
-                  <Label htmlFor={`category-${category.id}`}>{category.name}</Label>
+                <div key={category.slug} className="flex items-center space-x-2">
+                  <RadioGroupItem value={category.slug} id={`category-${category.slug}`} />
+                  <Label htmlFor={`category-${category.slug}`}>{category.name}</Label>
                 </div>
               ))}
             </RadioGroup>

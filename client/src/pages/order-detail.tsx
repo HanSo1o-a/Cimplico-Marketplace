@@ -5,14 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
+import { getQueryFn } from "@/lib/queryClient";
 import { ChevronLeft, Download, ShoppingBag, CheckCircle, Clock, Package, XCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { OrderStatus } from "@shared/schema";
 
 const OrderDetail = () => {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const { id } = useParams();
@@ -20,26 +19,27 @@ const OrderDetail = () => {
   
   const { data: order, isLoading, error } = useQuery({
     queryKey: [`/api/orders/${id}`],
+    queryFn: getQueryFn(),
     enabled: !!id && !!user
   });
 
   useEffect(() => {
     if (error) {
       toast({
-        title: t("common.error"),
-        description: t("order.notFound"),
+        title: "错误",
+        description: "订单未找到",
         variant: "destructive"
       });
       navigate("/profile");
     }
-  }, [error, navigate, t, toast]);
+  }, [error, navigate, toast]);
 
   if (isLoading) {
     return (
       <div className="container max-w-4xl mx-auto p-6 py-12">
         <div className="w-full h-64 flex flex-col items-center justify-center">
           <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
-          <p className="text-neutral-500">{t("common.loading")}</p>
+          <p className="text-neutral-500">加载中...</p>
         </div>
       </div>
     );
@@ -50,10 +50,10 @@ const OrderDetail = () => {
       <div className="container max-w-4xl mx-auto p-6 py-12">
         <div className="text-center py-12">
           <ShoppingBag className="mx-auto h-12 w-12 text-neutral-300 mb-4" />
-          <h3 className="text-lg font-medium text-neutral-900 mb-1">{t("order.notFound")}</h3>
-          <p className="text-neutral-500 mb-4">{t("order.tryAgain")}</p>
+          <h3 className="text-lg font-medium text-neutral-900 mb-1">订单未找到</h3>
+          <p className="text-neutral-500 mb-4">请稍后再试</p>
           <Button onClick={() => navigate("/profile")}>
-            {t("common.backToProfile")}
+            返回个人中心
           </Button>
         </div>
       </div>
@@ -84,19 +84,19 @@ const OrderDetail = () => {
           onClick={() => navigate("/profile")}
         >
           <ChevronLeft className="h-4 w-4" />
-          <span>{t("common.back")}</span>
+          <span>返回</span>
         </Button>
         
         <div className="text-right">
-          <h1 className="text-2xl font-bold">{t("order.details")}</h1>
-          <p className="text-neutral-500">{t("order.number")}: #{order.id}</p>
+          <h1 className="text-2xl font-bold">订单详情</h1>
+          <p className="text-neutral-500">订单号: #{order.id}</p>
         </div>
       </div>
       
       <div className="grid md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">{t("order.date")}</CardTitle>
+            <CardTitle className="text-sm font-medium">订单日期</CardTitle>
           </CardHeader>
           <CardContent>
             <p>{formatDate(order.createdAt)}</p>
@@ -105,14 +105,21 @@ const OrderDetail = () => {
         
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">{t("order.status")}</CardTitle>
+            <CardTitle className="text-sm font-medium">订单状态</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center space-x-3">
             {renderStatusIcon(order.status)}
             <div>
-              <p className="font-medium">{t(`order.status.${order.status}`)}</p>
+              <p className="font-medium">
+                {order.status === "PAID" && "已支付"}
+                {order.status === "COMPLETED" && "已完成"}
+                {order.status === "CANCELLED" && "已取消"}
+                {order.status === "CREATED" && "已下单"}
+                {order.status === "SHIPPED" && "已发货"}
+                {order.status === "REFUNDED" && "已退款"}
+              </p>
               {order.status === OrderStatus.PAID && (
-                <p className="text-sm text-neutral-500">{t("order.statusDescription.PAID")}</p>
+                <p className="text-sm text-neutral-500">订单已支付，等待处理</p>
               )}
             </div>
           </CardContent>
@@ -120,7 +127,7 @@ const OrderDetail = () => {
         
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">{t("order.total")}</CardTitle>
+            <CardTitle className="text-sm font-medium">订单总额</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-bold">¥{order.totalAmount.toFixed(2)}</p>
@@ -130,7 +137,7 @@ const OrderDetail = () => {
       
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>{t("order.items")}</CardTitle>
+          <CardTitle>订单项目</CardTitle>
         </CardHeader>
         <CardContent>
           {order.items && order.items.map((item) => (
@@ -151,9 +158,23 @@ const OrderDetail = () => {
                     <p className="font-medium">¥{item.unitPrice?.toFixed(2) || '0.00'}</p>
                   </div>
                   <div className="flex justify-between text-sm text-neutral-500 mt-1">
-                    <p>{t("product.quantity")}: {item.quantity}</p>
-                    <p>{t("product.type")}: {t(`product.type.${item.listing?.type.toLowerCase()}`)}</p>
+                    <p>数量: {item.quantity}</p>
+                    <p>类型: {item.listing?.type === "DIGITAL" ? "数字产品" : "实体产品"}</p>
                   </div>
+                  {(order.status === OrderStatus.SHIPPED || order.status === OrderStatus.COMPLETED) && 
+                   item.listing?.downloadUrl && (
+                    <div className="mt-3">
+                      <a 
+                        href={item.listing.downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md bg-primary text-white hover:bg-primary/90"
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        下载
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -161,14 +182,14 @@ const OrderDetail = () => {
           
           <div className="pt-4">
             <div className="flex justify-between py-2">
-              <span>{t("order.subtotal")}</span>
+              <span>小计</span>
               <span>¥{order.totalAmount.toFixed(2)}</span>
             </div>
             
             <Separator className="my-2" />
             
             <div className="flex justify-between py-2 font-bold">
-              <span>{t("order.total")}</span>
+              <span>总计</span>
               <span>¥{order.totalAmount.toFixed(2)}</span>
             </div>
           </div>
@@ -177,15 +198,8 @@ const OrderDetail = () => {
       
       <div className="flex justify-between items-center">
         <Button variant="outline" onClick={() => navigate("/profile")}>
-          {t("common.backToProfile")}
+          返回个人中心
         </Button>
-        
-        {(order.status === OrderStatus.SHIPPED || order.status === OrderStatus.COMPLETED) && order.items && order.items.some(item => item.listing?.downloadUrl) && (
-          <Button>
-            {t("order.downloadPurchase")}
-            <Download className="ml-2 h-4 w-4" />
-          </Button>
-        )}
       </div>
     </div>
   );

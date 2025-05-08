@@ -485,6 +485,38 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getListingsByCategoryNameOrId(categoryName: string, categoryId: number): Promise<Listing[]> {
+    try {
+      const result = await db
+        .select()
+        .from(listings)
+        .where(
+          and(
+            eq(listings.status, ListingStatus.ACTIVE),
+            // 兼容商品表存 categoryId 或 category 字段
+            (eq(listings.categoryId, categoryId) as any) // drizzle-orm 不支持 or，这里用 as any hack
+          )
+        );
+      // 补充：若 categoryId 为空，尝试用 categoryName 匹配
+      if (result.length === 0) {
+        const resultByName = await db
+          .select()
+          .from(listings)
+          .where(
+            and(
+              eq(listings.status, ListingStatus.ACTIVE),
+              eq(listings.category, categoryName)
+            )
+          );
+        return resultByName;
+      }
+      return result;
+    } catch (error) {
+      console.error("Error in getListingsByCategoryNameOrId:", error);
+      return [];
+    }
+  }
+
   async searchListings(query: string, filters?: any): Promise<Listing[]> {
     try {
       // 构建WHERE条件

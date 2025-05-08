@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCartStore } from "@/store/useCartStore";
+import { useQuery } from "@tanstack/react-query";
 
 const Header = () => {
   const { t } = useTranslation();
@@ -36,6 +37,17 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const cartItems = useCartStore((state) => state.items);
   const itemsCount = useCartStore((state) => state.getItemsCount());
+
+  // 分类数据
+  const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ["/api/categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/categories");
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
   // Track scroll position for shadow effect
   useEffect(() => {
@@ -118,6 +130,14 @@ const Header = () => {
                   <Settings className="mr-2 h-4 w-4" />
                   {t("admin.dashboard")}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/products")}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  {t("admin.products")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/orders")}>
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  {t("admin.orders")}
+                </DropdownMenuItem>
               </>
             )}
 
@@ -159,6 +179,18 @@ const Header = () => {
         <div className="container mx-auto flex justify-between items-center">
           <LanguageSwitcher />
           <div className="hidden md:flex gap-4 text-neutral-300">
+            {user && user.role === "ADMIN" && (
+              <>
+                <a 
+                  href="/admin" 
+                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded-sm transition-colors flex items-center"
+                >
+                  <Settings className="h-3 w-3 mr-1" />
+                  {t("admin.adminPanel")}
+                </a>
+                <span>|</span>
+              </>
+            )}
             <a href="#" className="hover:text-white transition-colors">{t("nav.help")}</a>
             <span>|</span>
             <a href="#" className="hover:text-white transition-colors">{t("nav.about")}</a>
@@ -273,46 +305,24 @@ const Header = () => {
                 </Link>
                 <div className="absolute left-0 top-full bg-white shadow-lg rounded-lg w-64 hidden group-hover:block z-50">
                   <ul className="py-2">
-                    <li>
-                      <Link href="/marketplace?category=financial">
-                        <span className="block px-4 py-2 hover:bg-neutral-100">
-                          {t("categories.financial")}
-                        </span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/marketplace?category=audit">
-                        <span className="block px-4 py-2 hover:bg-neutral-100">
-                          {t("categories.audit")}
-                        </span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/marketplace?category=tax">
-                        <span className="block px-4 py-2 hover:bg-neutral-100">
-                          {t("categories.tax")}
-                        </span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/marketplace?category=compliance">
-                        <span className="block px-4 py-2 hover:bg-neutral-100">
-                          {t("categories.compliance")}
-                        </span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/marketplace?category=analysis">
-                        <span className="block px-4 py-2 hover:bg-neutral-100">
-                          {t("categories.analysis")}
-                        </span>
-                      </Link>
-                    </li>
+                    {isCategoriesLoading ? (
+                      <li className="px-4 py-2 text-neutral-400">加载分类中...</li>
+                    ) : categoriesData.length === 0 ? (
+                      <li className="px-4 py-2 text-neutral-400">暂无分类</li>
+                    ) : (
+                      categoriesData.map((cat: any) => (
+                        <li key={cat.id}>
+                          <Link href={`/marketplace?category=${encodeURIComponent(cat.name)}`}>
+                            <span className="block px-4 py-2 hover:bg-neutral-100">
+                              {cat.name}
+                            </span>
+                          </Link>
+                        </li>
+                      ))
+                    )}
                     <li>
                       <Link href="/marketplace">
-                        <span className="block px-4 py-2 hover:bg-neutral-100">
-                          {t("categories.all")}
-                        </span>
+                        <span className="block px-4 py-2 hover:bg-neutral-100">查看全部分类</span>
                       </Link>
                     </li>
                   </ul>
@@ -368,39 +378,24 @@ const Header = () => {
                 </div>
                 <div className="bg-neutral-50">
                   <ul>
-                    <li>
-                      <Link href="/marketplace?category=financial">
-                        <span className="block px-6 py-2 hover:bg-neutral-100">
-                          {t("categories.financial")}
-                        </span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/marketplace?category=audit">
-                        <span className="block px-6 py-2 hover:bg-neutral-100">
-                          {t("categories.audit")}
-                        </span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/marketplace?category=tax">
-                        <span className="block px-6 py-2 hover:bg-neutral-100">
-                          {t("categories.tax")}
-                        </span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/marketplace?category=compliance">
-                        <span className="block px-6 py-2 hover:bg-neutral-100">
-                          {t("categories.compliance")}
-                        </span>
-                      </Link>
-                    </li>
+                    {isCategoriesLoading ? (
+                      <li className="px-6 py-2 text-neutral-400">加载分类中...</li>
+                    ) : categoriesData.length === 0 ? (
+                      <li className="px-6 py-2 text-neutral-400">暂无分类</li>
+                    ) : (
+                      categoriesData.map((cat: any) => (
+                        <li key={cat.id}>
+                          <Link href={`/marketplace?category=${encodeURIComponent(cat.name)}`}>
+                            <span className="block px-6 py-2 hover:bg-neutral-100">
+                              {cat.name}
+                            </span>
+                          </Link>
+                        </li>
+                      ))
+                    )}
                     <li>
                       <Link href="/marketplace">
-                        <span className="block px-6 py-2 hover:bg-neutral-100">
-                          {t("categories.all")}
-                        </span>
+                        <span className="block px-6 py-2 hover:bg-neutral-100">查看全部分类</span>
                       </Link>
                     </li>
                   </ul>

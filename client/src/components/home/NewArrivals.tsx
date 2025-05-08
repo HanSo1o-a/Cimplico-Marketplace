@@ -6,14 +6,17 @@ import ProductGrid from "@/components/product/ProductGrid";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useLocation } from "wouter";
+import { getQueryFn } from "@/lib/queryClient";
 
 const NewArrivals: React.FC = () => {
   const { t } = useTranslation();
   const [_, navigate] = useLocation();
 
-  // 获取最新上架的产品
-  const { data: listings, isLoading } = useQuery<Listing[]>({
+  // 获取最新上架的产品（移除本地测试数据，强制用API返回）
+  const { data: listings = [], isLoading } = useQuery({
     queryKey: ["/api/listings", { newest: true, limit: 8 }],
+    queryFn: getQueryFn(),
+    staleTime: 1000 * 60 * 5,
   });
 
   const viewAllNewArrivals = () => {
@@ -41,7 +44,7 @@ const NewArrivals: React.FC = () => {
         </div>
 
         <ProductGrid
-          products={listings || []}
+          products={listings}
           isLoading={isLoading}
           emptyMessage={t("home.newArrivals.empty")}
           columns={4}

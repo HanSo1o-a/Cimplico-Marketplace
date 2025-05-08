@@ -22,11 +22,14 @@ import AdminCategoriesPage from "@/pages/admin/AdminCategoriesPage";
 import AdminVendorsPage from "@/pages/admin/AdminVendorsPage";
 import AdminOrdersPage from "@/pages/admin/AdminOrdersPage";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
+import AdminStatisticsPage from "@/pages/admin/AdminStatisticsPage";
+import AdminCommentsPage from "@/pages/admin/AdminCommentsPage";
 import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
 import OrderDetail from "@/pages/order-detail";
 import MainLayout from "@/components/layout/MainLayout";
 import AdminLayout from "@/components/layout/AdminLayout";
+import AdminProductEditPage from "@/pages/admin/AdminProductEditPage";
 
 // 用户路由
 function UserRouter() {
@@ -59,10 +62,13 @@ function AdminRouter() {
     <Switch>
       <Route path="/admin" component={renderWithAdminLayout(AdminHomePage)} />
       <Route path="/admin/products" component={renderWithAdminLayout(AdminProductsPage)} />
+      <Route path="/admin/products/edit/:id" component={renderWithAdminLayout(AdminProductEditPage)} />
       <Route path="/admin/categories" component={renderWithAdminLayout(AdminCategoriesPage)} />
       <Route path="/admin/vendors" component={renderWithAdminLayout(AdminVendorsPage)} />
       <Route path="/admin/orders" component={renderWithAdminLayout(AdminOrdersPage)} />
       <Route path="/admin/users" component={renderWithAdminLayout(AdminUsersPage)} />
+      <Route path="/admin/comments" component={renderWithAdminLayout(AdminCommentsPage)} />
+      <Route path="/admin/statistics" component={renderWithAdminLayout(AdminStatisticsPage)} />
       <Route path="/admin-dashboard" component={renderWithAdminLayout(AdminDashboard)} />
       <Route path="/auth" component={AuthPage} />
       <Route path="*" component={NotFound} />
@@ -75,22 +81,14 @@ function RouterSelector() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   
-  // 如果用户是管理员并且不在管理员路径，则自动重定向到管理员主页
-  useEffect(() => {
-    if (!isLoading && user && user.role === UserRole.ADMIN) {
-      const currentPath = window.location.pathname;
-      if (!currentPath.startsWith('/admin')) {
-        setLocation('/admin');
-      }
-    }
-  }, [user, isLoading, setLocation]);
-
+  // 移除管理员自动重定向逻辑
+  
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">加载中...</div>;
   }
 
   // 根据用户角色选择不同的路由和布局
-  if (user && user.role === UserRole.ADMIN) {
+  if (user && user.role === UserRole.ADMIN && window.location.pathname.startsWith('/admin')) {
     return <AdminRouter />;
   }
 

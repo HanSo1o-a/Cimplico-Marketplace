@@ -59,37 +59,47 @@ const Marketplace = () => {
   const freeOnly = searchParams.get("freeOnly") === "true";
   const vendorsPage = searchParams.get("vendors") === "true";
 
-  // Determine the appropriate API endpoint and params based on filters
-  const getQueryParams = () => {
-    const params: Record<string, string> = {};
-    
-    if (searchQuery) params.search = searchQuery;
-    if (category && category !== "all") params.category = category;
-    if (minPrice !== undefined) params.minPrice = minPrice.toString();
-    if (maxPrice !== undefined) params.maxPrice = maxPrice.toString();
-    if (freeOnly) params.freeOnly = "true";
-    if (vendorId) params.vendorId = vendorId;
-    
-    // Add offset and limit for pagination
-    params.offset = ((currentPage - 1) * itemsPerPage).toString();
-    params.limit = itemsPerPage.toString();
-    
-    return new URLSearchParams(params).toString();
-  };
-
-  // Determine which endpoint to use
-  const getQueryEndpoint = () => {
-    if (vendorsPage) return "/api/vendors";
-    if (featured) return "/api/listings/featured";
-    if (newArrivals) return "/api/listings?newArrivals=true";
-    return "/api/listings";
-  };
-
-  // Fetch products based on filters
-  const { data, isLoading, refetch } = useQuery<Listing[] | VendorProfile[]>({
-    queryKey: [getQueryEndpoint(), getQueryParams()],
-    keepPreviousData: true,
+  // 获取所有商品数据
+  const { data: productsData = [], isLoading: isProductsLoading } = useQuery({
+    queryKey: ["/api/listings"],
+    queryFn: async () => {
+      const res = await fetch("/api/listings");
+      const json = await res.json();
+      console.log("[Marketplace] 全部商品数据:", json);
+      return json;
+    },
+    staleTime: 1000 * 60 * 5,
+    enabled: !vendorsPage, // 只在非供应商页面获取商品数据
   });
+
+  // 获取所有供应商数据
+  const { data: vendorsData = [], isLoading: isVendorsLoading } = useQuery({
+    queryKey: ["/api/vendors"],
+    queryFn: async () => {
+      const res = await fetch("/api/vendors");
+      const json = await res.json();
+      console.log("[Marketplace] 全部供应商数据:", json);
+      return json;
+    },
+    staleTime: 1000 * 60 * 5,
+    enabled: vendorsPage, // 只在供应商页面获取供应商数据
+  });
+
+  // 根据页面类型选择数据
+  const data = vendorsPage ? vendorsData : productsData;
+  const isLoading = vendorsPage ? isVendorsLoading : isProductsLoading;
+
+  // 分类过滤（只在前端过滤）
+  const filteredData = category && category !== "all"
+    ? data.filter((item: any) => item.category === category)
+    : data;
+  console.log("[Marketplace] 当前分类:", category, "过滤后商品:", filteredData);
+
+  // 免费资源过滤（价格为0的商品）
+  const finalFilteredData = freeOnly
+    ? filteredData.filter((item: any) => item.price === 0)
+    : filteredData;
+  console.log("[Marketplace] 免费资源过滤:", freeOnly, "最终过滤商品:", finalFilteredData);
 
   // Handle search form submission
   const handleSearch = (e: React.FormEvent) => {
@@ -120,9 +130,6 @@ const Marketplace = () => {
     // Update URL without triggering navigation
     const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : "");
     window.history.pushState({ path: newUrl }, "", newUrl);
-    
-    // Trigger query refetch
-    refetch();
   };
 
   // Apply sort
@@ -131,7 +138,6 @@ const Marketplace = () => {
     
     // Apply sort logic (in a real application this would be handled by the API)
     // For now, we'll just refetch to simulate
-    refetch();
   };
 
   // Handle page change
@@ -162,7 +168,7 @@ const Marketplace = () => {
   };
 
   // Determine total pages
-  const totalItems = data?.length || 0;
+  const totalItems = finalFilteredData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   // Render vendors grid if on vendors page
@@ -172,19 +178,19 @@ const Marketplace = () => {
         <h1 className="text-3xl font-bold mb-6">{getPageTitle()}</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {(data as VendorProfile[]).map((vendor) => (
+          {(data as any[]).map((vendor) => (
             <div key={vendor.id} className="bg-white rounded-lg shadow p-6 flex flex-col items-center">
               <div className="relative">
                 <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center mb-4">
                   {vendor.user?.avatar ? (
                     <img 
                       src={vendor.user.avatar} 
-                      alt={vendor.companyName} 
+                      alt={vendor.companyName || t("vendor.unknownVendor")} 
                       className="w-24 h-24 rounded-full object-cover"
                     />
                   ) : (
                     <span className="text-3xl font-bold text-primary-600">
-                      {vendor.companyName.charAt(0)}
+                      {vendor.companyName ? vendor.companyName.charAt(0) : "?"}
                     </span>
                   )}
                 </div>
@@ -197,7 +203,7 @@ const Marketplace = () => {
                 )}
               </div>
               
-              <h3 className="text-xl font-bold mb-2">{vendor.companyName}</h3>
+              <h3 className="text-xl font-bold mb-2">{vendor.companyName || t("vendor.unknownVendor")}</h3>
               
               {vendor.verificationStatus === "APPROVED" && (
                 <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs mb-2">
@@ -304,14 +310,14 @@ const Marketplace = () => {
 
           {/* Products Grid */}
           <ProductGrid 
-            products={data as Listing[] || []}
+            products={finalFilteredData}
             isLoading={isLoading}
             emptyMessage={t("product.noProducts")}
             columns={3}
           />
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {Math.ceil(finalFilteredData.length / itemsPerPage) > 1 && (
             <div className="mt-8">
               <Pagination>
                 <PaginationContent>

@@ -7,14 +7,17 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { getQueryFn } from "@/lib/queryClient";
 
 const FeaturedProducts: React.FC = () => {
   const { t } = useTranslation();
   const [_, navigate] = useLocation();
 
   // 获取精选产品
-  const { data: listings, isLoading } = useQuery<Listing[]>({
-    queryKey: ["/api/listings", { featured: true, limit: 4 }],
+  const { data: listings = [], isLoading } = useQuery<Listing[]>({
+    queryKey: ["/api/listings/featured"],
+    queryFn: getQueryFn(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const viewAllFeatured = () => {

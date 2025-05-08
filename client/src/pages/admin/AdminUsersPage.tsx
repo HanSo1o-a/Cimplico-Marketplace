@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import AdminLayout from "@/components/layout/AdminLayout";
@@ -35,10 +35,50 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { User, UserRole, UserStatus } from "@shared/schema";
-import { MoreHorizontal, UserCheck, UserX, User as UserIcon } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { MoreHorizontal, UserCheck, UserX, User as UserIcon, Edit, KeyRound } from "lucide-react";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
+
+// 用户编辑表单验证模式
+const userEditSchema = z.object({
+  firstName: z.string().min(1, { message: "名字不能为空" }),
+  lastName: z.string().min(1, { message: "姓氏不能为空" }),
+  email: z.string().email({ message: "请输入有效的邮箱地址" }),
+  phone: z.string().optional(),
+  role: z.enum([UserRole.ADMIN, UserRole.USER, UserRole.VENDOR]),
+  language: z.string().min(1, { message: "请选择语言" }),
+});
+
+// 密码修改表单验证模式
+const passwordChangeSchema = z.object({
+  password: z.string().min(6, { message: "密码至少需要6个字符" }),
+  confirmPassword: z.string().min(6, { message: "确认密码至少需要6个字符" }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "两次输入的密码不匹配",
+  path: ["confirmPassword"],
+});
 
 const UserStatusBadge = ({ status }: { status: UserStatus }) => {
   const statusColors: Record<UserStatus, string> = {
@@ -72,6 +112,8 @@ const UsersTable = ({ users }: { users: User[] }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editDialog, setEditDialog] = useState<boolean>(false);
+  const [passwordDialog, setPasswordDialog] = useState<boolean>(false);
   const [actionDialog, setActionDialog] = useState<{
     open: boolean;
     action: "activate" | "suspend" | null;
@@ -85,7 +127,7 @@ const UsersTable = ({ users }: { users: User[] }) => {
 
     try {
       const newStatus = actionDialog.action === "activate" ? UserStatus.ACTIVE : UserStatus.SUSPENDED;
-      
+
       await apiRequest("PATCH", `/api/admin/users/${selectedUser.id}`, {
         status: newStatus
       });
@@ -104,6 +146,102 @@ const UsersTable = ({ users }: { users: User[] }) => {
     } catch (error) {
       toast({
         title: t("admin.statusUpdateFailed"),
+        description: t("admin.somethingWentWrong"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 编辑用户表单
+  const editForm = useForm<z.infer<typeof userEditSchema>>({
+    resolver: zodResolver(userEditSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      role: UserRole.USER,
+      language: "zh",
+    },
+  });
+
+  // 修改密码表单
+  const passwordForm = useForm<z.infer<typeof passwordChangeSchema>>({
+    resolver: zodResolver(passwordChangeSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  // 当选中用户变化时，更新表单默认值
+  useEffect(() => {
+    if (selectedUser) {
+      editForm.reset({
+        firstName: selectedUser.firstName,
+        lastName: selectedUser.lastName,
+        email: selectedUser.email,
+        phone: selectedUser.phone || "",
+        role: selectedUser.role as UserRole,
+        language: selectedUser.language || "zh",
+      });
+    }
+  }, [selectedUser, editForm]);
+
+  // 处理用户编辑提交
+  const handleEditSubmit = async (data: z.infer<typeof userEditSchema>) => {
+    if (!selectedUser) return;
+
+    try {
+      await apiRequest("PATCH", `/api/admin/users/${selectedUser.id}`, data);
+
+      toast({
+        title: t("admin.userUpdateSuccess"),
+        description: t("admin.userInfoUpdated"),
+      });
+
+      // 刷新用户列表数据
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+
+      // 关闭对话框并重置状态
+      setEditDialog(false);
+      setSelectedUser(null);
+    } catch (error) {
+      toast({
+        title: t("admin.userUpdateFailed"),
+        description: t("admin.somethingWentWrong"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 处理密码修改提交
+  const handlePasswordSubmit = async (data: z.infer<typeof passwordChangeSchema>) => {
+    if (!selectedUser) return;
+
+    try {
+      console.log("Submitting password change:", { userId: selectedUser.id, passwordLength: data.password.length });
+
+      const result = await apiRequest("PATCH", `/api/admin/users/${selectedUser.id}/password`, {
+        password: data.password
+      });
+
+      console.log("Password change successful:", result);
+
+      toast({
+        title: t("admin.passwordUpdateSuccess"),
+        description: t("admin.passwordUpdated"),
+      });
+
+      // 关闭对话框并重置状态
+      setPasswordDialog(false);
+      setSelectedUser(null);
+      passwordForm.reset();
+    } catch (error) {
+      console.error("Password change failed:", error);
+
+      toast({
+        title: t("admin.passwordUpdateFailed"),
         description: t("admin.somethingWentWrong"),
         variant: "destructive",
       });
@@ -151,6 +289,24 @@ const UsersTable = ({ users }: { users: User[] }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>{t("admin.actions")}</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setEditDialog(true);
+                      }}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      <span>{t("admin.editUser")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setPasswordDialog(true);
+                      }}
+                    >
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      <span>{t("admin.changePassword")}</span>
+                    </DropdownMenuItem>
                     {(user.status as UserStatus) !== UserStatus.ACTIVE && (
                       <DropdownMenuItem
                         onClick={() => {
@@ -186,6 +342,211 @@ const UsersTable = ({ users }: { users: User[] }) => {
           ))}
         </TableBody>
       </Table>
+
+      {/* 编辑用户对话框 */}
+      <Dialog
+        open={editDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditDialog(false);
+            setSelectedUser(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t("admin.editUserInfo")}</DialogTitle>
+            <DialogDescription>
+              {t("admin.editUserDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.firstName")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.lastName")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.email")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.phone")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.role")}</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("admin.selectRole")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={UserRole.USER}>{t("admin.roleUser")}</SelectItem>
+                        <SelectItem value={UserRole.VENDOR}>{t("admin.roleVendor")}</SelectItem>
+                        <SelectItem value={UserRole.ADMIN}>{t("admin.roleAdmin")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.language")}</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("admin.selectLanguage")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="zh">{t("admin.languageChinese")}</SelectItem>
+                        <SelectItem value="en">{t("admin.languageEnglish")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setEditDialog(false);
+                    setSelectedUser(null);
+                  }}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button type="submit">{t("common.save")}</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* 修改密码对话框 */}
+      <Dialog
+        open={passwordDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPasswordDialog(false);
+            setSelectedUser(null);
+            passwordForm.reset();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t("admin.changePassword")}</DialogTitle>
+            <DialogDescription>
+              {selectedUser && `${t("admin.changePasswordFor")} ${selectedUser.firstName} ${selectedUser.lastName}`}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...passwordForm}>
+            <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
+              <FormField
+                control={passwordForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.newPassword")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("admin.confirmPassword")}</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setPasswordDialog(false);
+                    setSelectedUser(null);
+                    passwordForm.reset();
+                  }}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button type="submit">{t("common.save")}</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       {/* 状态更改确认对话框 */}
       <Dialog
@@ -281,40 +642,46 @@ const LoadingState = () => {
 
 const AdminUsersPage = () => {
   const { t } = useTranslation();
-  
+
   const {
     data: users,
     isLoading,
     error,
   } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
+    queryFn: getQueryFn({
+      on401: "throw",
+      fallbackData: []
+    }),
   });
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle>{t("admin.userManagement")}</CardTitle>
-        <CardDescription>
-          {t("admin.userManagementDescription")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <LoadingState />
-        ) : error ? (
-          <div className="text-center py-4 text-red-500">
-            <p>{t("admin.errorLoadingUsers")}</p>
-          </div>
-        ) : users && users.length > 0 ? (
-          <UsersTable users={users} />
-        ) : (
-          <div className="text-center py-4 text-gray-500">
-            <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <p>{t("admin.noUsersFound")}</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <AdminLayout active="users">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{t("admin.userManagement")}</CardTitle>
+          <CardDescription>
+            {t("admin.userManagementDescription")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <LoadingState />
+          ) : error ? (
+            <div className="text-center py-4 text-red-500">
+              <p>{t("admin.errorLoadingUsers")}</p>
+            </div>
+          ) : users && users.length > 0 ? (
+            <UsersTable users={users} />
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              <UserIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <p>{t("admin.noUsersFound")}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </AdminLayout>
   );
 };
 

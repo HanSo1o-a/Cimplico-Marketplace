@@ -6,6 +6,7 @@ import { z } from "zod";
 import { insertListingSchema, ListingType } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +44,8 @@ const formSchema = insertListingSchema.extend({
   price: z.coerce.number().min(0, {
     message: "价格不能为负数",
   }),
+  vendorId: z.number().optional(), // 让vendorId为可选，避免编辑时报错
+  downloadUrl: z.string().optional(), // 添加downloadUrl字段的验证规则
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,6 +66,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
     product?.images ? [...product.images] : []
   );
 
+  // 获取真实分类数据
+  const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ["/api/categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/categories");
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
   // 创建表单实例
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,29 +85,36 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
       description: product?.description || "",
       price: product?.price || 0,
       type: product?.type || ListingType.DIGITAL,
-      category: product?.category || "financial",
+      category: product?.category || "",
+      downloadUrl: product?.downloadUrl || "",
     },
   });
 
   // 提交表单
   const onSubmit = async (values: FormValues) => {
+    console.log("[ProductForm] onSubmit called with values:", values);
     try {
       setIsSubmitting(true);
-
       const productData = {
         ...values,
         tags: tags,
         images: uploadedImages
       };
-      
+      console.log("[ProductForm] productData to submit:", productData);
       // 确保vendorId不会被重复添加
       if (!product && vendorId) {
         productData.vendorId = vendorId;
       }
-
       if (product) {
         // 更新现有产品
-        await apiRequest("PATCH", `/api/listings/${product.id}`, productData);
+        const updateData = {
+          ...productData,
+          // 如果商品之前被拒绝，更新后将状态改为待审核
+          ...(product.status === "REJECTED" && { status: "PENDING" })
+        };
+        console.log("[ProductForm] 更新产品数据:", updateData);
+        const response = await apiRequest("PATCH", `/api/listings/${product.id}`, updateData);
+        console.log("[ProductForm] 更新产品响应:", response);
         toast({
           title: t("product.updateSuccess"),
           description: t("product.productUpdated"),
@@ -105,23 +126,23 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
         if (!vendorId) {
           throw new Error("缺少供应商ID");
         }
-        await apiRequest("POST", `/api/vendors/${vendorId}/listings`, productData);
+        const response = await apiRequest("POST", `/api/vendors/${vendorId}/listings`, productData);
+        console.log("[ProductForm] 创建产品响应:", response);
         toast({
           title: t("product.createSuccess"),
           description: t("product.productCreated"),
         });
         queryClient.invalidateQueries({ queryKey: ["/api/listings"] });
       }
-
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
-      console.error("提交表单时出错:", error);
+      console.error("[ProductForm] 提交表单时出错:", error);
       toast({
         variant: "destructive",
         title: t("common.error"),
-        description: t("product.formError"),
+        description: error instanceof Error ? error.message : t("product.formError"),
       });
     } finally {
       setIsSubmitting(false);
@@ -144,17 +165,35 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
+  // 上传图片到服务器，返回真实图片URL
+  async function uploadImageToServer(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    if (!res.ok) throw new Error('上传失败');
+    const data = await res.json();
+    return data.url;
+  }
+
   // 模拟图片上传
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length) return;
-
-    // 在实际应用中，这里应该是将文件上传到服务器或云存储
-    // 为了演示，我们将使用URL.createObjectURL创建临时URL
-    const newImages = Array.from(files).map((file) => URL.createObjectURL(file));
-    setUploadedImages([...uploadedImages, ...newImages]);
-
-    // 清除input value，允许上传相同的文件
+    const uploaded: string[] = [];
+    for (const file of Array.from(files)) {
+      // 上传到服务器，获得真实URL
+      try {
+        const url = await uploadImageToServer(file);
+        uploaded.push(url);
+      } catch (err) {
+        toast({
+          variant: 'destructive',
+          title: '图片上传失败',
+          description: (err as Error).message,
+        });
+      }
+    }
+    setUploadedImages([...uploadedImages, ...uploaded]);
     e.target.value = "";
   };
 
@@ -174,10 +213,25 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
             ? t("product.editProductDescription")
             : t("product.addProductDescription")}
         </CardDescription>
+        
+        {/* 显示拒绝理由 */}
+        {product && product.status === "REJECTED" && product.rejectionReason && (
+          <div className="mt-4 p-4 border border-red-200 bg-red-50 rounded-md">
+            <h3 className="text-red-700 font-medium mb-1">{t("product.rejectionReason")}:</h3>
+            <p className="text-red-600">{product.rejectionReason}</p>
+            <p className="text-sm text-red-500 mt-2">{t("product.editAndResubmit")}</p>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={form.handleSubmit(onSubmit, (errors) => {
+              console.warn('[ProductForm] 校验未通过，errors:', errors);
+              // 也可以在页面上显示所有校验错误
+            })}
+            className="space-y-6"
+          >
             <FormField
               control={form.control}
               name="title"
@@ -260,7 +314,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
                     <FormLabel>{t("product.category")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      defaultValue={field.value ?? undefined}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -268,11 +322,19 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="financial">{t("categories.financial")}</SelectItem>
-                        <SelectItem value="audit">{t("categories.audit")}</SelectItem>
-                        <SelectItem value="tax">{t("categories.tax")}</SelectItem>
-                        <SelectItem value="compliance">{t("categories.compliance")}</SelectItem>
-                        <SelectItem value="analysis">{t("categories.analysis")}</SelectItem>
+                        {isCategoriesLoading ? (
+                          <SelectItem value="__loading__" disabled>加载分类中...</SelectItem>
+                        ) : categoriesData.length === 0 ? (
+                          <SelectItem value="__none__" disabled>暂无分类</SelectItem>
+                        ) : (
+                          categoriesData
+                            .filter((cat: any) => cat.name && cat.name !== "")
+                            .map((cat: any) => (
+                              <SelectItem key={cat.id} value={cat.name}>
+                                {cat.name}
+                              </SelectItem>
+                            ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -305,6 +367,21 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
                   <FormDescription>
                     {t("product.priceTip")}
                   </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="downloadUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("product.downloadUrl")}</FormLabel>
+                  <FormControl>
+                    <Input placeholder={t("product.downloadUrlPlaceholder")} {...field} />
+                  </FormControl>
+                  <FormDescription>{t("product.downloadUrlHelp")}</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -378,8 +455,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-primary text-white hover:bg-primary/90 disabled:bg-gray-200 disabled:text-gray-400"
               disabled={isSubmitting}
+              variant="primary"
             >
               {isSubmitting ? (
                 <>

@@ -155,13 +155,11 @@ const Checkout = () => {
       }));
       
       // 步骤1: 创建订单
-      const orderResponse = await apiRequest('POST', '/api/orders', {
+      const order = await apiRequest('POST', '/api/orders', {
         items: orderItems,
         totalAmount: total,
         currency: 'CNY'
       });
-      
-      const order = await orderResponse.json();
       setOrderId(order.id);
       
       // 步骤2: 模拟支付处理
@@ -169,20 +167,18 @@ const Checkout = () => {
       await simulatePaymentProcessing();
       
       // 步骤3: 处理支付
-      const paymentResponse = await apiRequest('POST', '/api/payments', {
+      await apiRequest('POST', '/api/payments', {
         orderId: order.id,
         amount: total,
         currency: 'CNY',
         paymentMethod: paymentMethod
       });
       
-      await paymentResponse.json();
-      
       // 步骤4: 完成支付
       setPaymentStep(3);
       
       // 刷新订单列表
-      queryClient.invalidateQueries(["/api/users/orders"]);
+      queryClient.invalidateQueries({ queryKey: ["/api/users/current/orders"] });
       
       // 显示成功对话框
       setShowSuccessDialog(true);

@@ -4,10 +4,10 @@ import { useLocation } from "wouter";
 import { UserRole } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { Package, Store, ShoppingCart, LayoutDashboard, LogOut, Users, Tag } from "lucide-react";
+import { Package, Store, ShoppingCart, LayoutDashboard, LogOut, Users, Tag, BarChart, MessageSquare } from "lucide-react";
 
 interface AdminSidebarProps {
-  active?: "dashboard" | "products" | "categories" | "vendors" | "orders" | "users";
+  active?: "dashboard" | "products" | "categories" | "vendors" | "orders" | "users" | "statistics" | "comments";
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ active }) => {
@@ -22,7 +22,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ active }) => {
      currentPath.includes('/admin/categories') ? 'categories' : 
      currentPath.includes('/admin/vendors') ? 'vendors' : 
      currentPath.includes('/admin/orders') ? 'orders' : 
-     currentPath.includes('/admin/users') ? 'users' : 'dashboard');
+     currentPath.includes('/admin/users') ? 'users' : 
+     currentPath.includes('/admin/statistics') ? 'statistics' : 
+     currentPath.includes('/admin/comments') ? 'comments' : 'dashboard');
 
   if (!user || user.role !== UserRole.ADMIN) {
     return null;
@@ -64,6 +66,18 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ active }) => {
       label: t("admin.orderManagement"),
       icon: <ShoppingCart className="mr-2 h-5 w-5" />,
       onClick: () => navigate("/admin/orders"),
+    },
+    {
+      id: "comments",
+      label: t("admin.commentManagement"),
+      icon: <MessageSquare className="mr-2 h-5 w-5" />,
+      onClick: () => navigate("/admin/comments"),
+    },
+    {
+      id: "statistics",
+      label: t("admin.statistics"),
+      icon: <BarChart className="mr-2 h-5 w-5" />,
+      onClick: () => navigate("/admin/statistics"),
     },
   ];
 

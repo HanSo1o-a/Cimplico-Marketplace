@@ -3,45 +3,34 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Quote } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getQueryFn } from "@/lib/queryClient";
 
 const Testimonials: React.FC = () => {
   const { t } = useTranslation();
 
-  const testimonials = [
-    {
-      id: 1,
-      name: "王思源",
-      role: "财务经理",
-      company: "北京信达会计师事务所",
-      content: t("testimonials.testimonial1"),
-      avatar: "https://i.pravatar.cc/150?img=32",
-      rating: 5,
-    },
-    {
-      id: 2,
-      name: "陈美玲",
-      role: "税务总监",
-      company: "上海宏远财务咨询",
-      content: t("testimonials.testimonial2"),
-      avatar: "https://i.pravatar.cc/150?img=26",
-      rating: 5,
-    },
-    {
-      id: 3,
-      name: "张志强",
-      role: "审计合伙人",
-      company: "广州诚信会计师事务所",
-      content: t("testimonials.testimonial3"),
-      avatar: "https://i.pravatar.cc/150?img=59",
-      rating: 4,
-    },
-  ];
+  // 为 testimonials 添加类型定义，避免隐式 any 错误
+  type Testimonial = {
+    id: number;
+    name: string;
+    role: string;
+    company: string;
+    content: string;
+    avatar: string;
+    rating: number;
+  };
 
-  // 生成星级评分显示
+  const { data: testimonials = [] } = useQuery<Testimonial[]>({
+    queryKey: ["/api/testimonials"],
+    queryFn: getQueryFn(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // renderStars 参数类型声明，避免 n 隐式 any
   const renderStars = (rating: number) => {
     return (
       <div className="flex">
-        {Array.from({ length: 5 }).map((_, index) => (
+        {Array.from({ length: 5 }).map((_, index: number) => (
           <svg
             key={index}
             className={`h-5 w-5 ${
@@ -69,7 +58,7 @@ const Testimonials: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial) => (
+          {testimonials.map((testimonial: Testimonial) => (
             <Card key={testimonial.id} className="h-full">
               <CardContent className="p-6 flex flex-col h-full">
                 <div className="mb-6 flex justify-between items-start">

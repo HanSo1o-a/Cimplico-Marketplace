@@ -3,68 +3,76 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // 用户角色枚举
-export enum UserRole {
-  USER = "USER",
-  VENDOR = "VENDOR",
-  ADMIN = "ADMIN"
-}
+export const UserRole = {
+  USER: "USER",
+  VENDOR: "VENDOR",
+  ADMIN: "ADMIN"
+} as const;
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 // 用户状态枚举
-export enum UserStatus {
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
-  SUSPENDED = "SUSPENDED"
-}
+export const UserStatus = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+  SUSPENDED: "SUSPENDED"
+} as const;
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
 
 // 供应商验证状态枚举
-export enum VendorVerificationStatus {
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED"
-}
+export const VendorVerificationStatus = {
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED"
+} as const;
+export type VendorVerificationStatus = (typeof VendorVerificationStatus)[keyof typeof VendorVerificationStatus];
 
 // 商品状态枚举
-export enum ListingStatus {
-  DRAFT = "DRAFT",
-  PENDING = "PENDING",
-  ACTIVE = "ACTIVE",
-  REJECTED = "REJECTED",
-  INACTIVE = "INACTIVE"
-}
+export const ListingStatus = {
+  DRAFT: "DRAFT",
+  PENDING: "PENDING",
+  ACTIVE: "ACTIVE",
+  REJECTED: "REJECTED",
+  INACTIVE: "INACTIVE"
+} as const;
+export type ListingStatus = (typeof ListingStatus)[keyof typeof ListingStatus];
 
 // 商品类型枚举
-export enum ListingType {
-  PRODUCT = "PRODUCT",
-  SERVICE = "SERVICE",
-  DIGITAL = "DIGITAL"
-}
+export const ListingType = {
+  PRODUCT: "PRODUCT",
+  SERVICE: "SERVICE",
+  DIGITAL: "DIGITAL"
+} as const;
+export type ListingType = (typeof ListingType)[keyof typeof ListingType];
 
 // 订单状态枚举
-export enum OrderStatus {
-  CREATED = "CREATED",
-  PAID = "PAID",
-  PROCESSING = "PROCESSING",
-  SHIPPED = "SHIPPED",
-  DELIVERED = "DELIVERED",
-  COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
-  REFUNDED = "REFUNDED"
-}
+export const OrderStatus = {
+  CREATED: "CREATED",
+  PAID: "PAID",
+  PROCESSING: "PROCESSING",
+  SHIPPED: "SHIPPED",
+  DELIVERED: "DELIVERED",
+  COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED",
+  REFUNDED: "REFUNDED"
+} as const;
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
 // 支付状态枚举
-export enum PaymentStatus {
-  PENDING = "PENDING",
-  COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
-  REFUNDED = "REFUNDED"
-}
+export const PaymentStatus = {
+  PENDING: "PENDING",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED",
+  REFUNDED: "REFUNDED"
+} as const;
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
 
 // 评论状态枚举
-export enum CommentStatus {
-  PENDING = "PENDING",
-  APPROVED = "APPROVED",
-  REJECTED = "REJECTED"
-}
+export const CommentStatus = {
+  PENDING: "PENDING",
+  APPROVED: "APPROVED",
+  REJECTED: "REJECTED"
+} as const;
+export type CommentStatus = (typeof CommentStatus)[keyof typeof CommentStatus];
 
 // 用户表
 export const users = pgTable("users", {
