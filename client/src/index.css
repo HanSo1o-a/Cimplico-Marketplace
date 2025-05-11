@@ -3,27 +3,55 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --cimplico-blue: #0096FF;
+    --cimplico-dark-blue: #0F2B46;
+    --cimplico-light-blue: #E5F4FF;
+    --cimplico-gray: #F5F7FA;
+    --cimplico-text: #333333;
+  }
+
   * {
     /* @apply border-border; */
   }
 
   body {
-    @apply font-sans antialiased text-foreground bg-blue-100;
+    @apply font-sans antialiased text-[#333333] bg-white;
   }
 
   .bg-gradient-page {
-    @apply bg-gradient-to-b from-blue-50 to-slate-100;
+    @apply bg-white;
   }
-  
+
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-white rounded-lg border border-gray-100;
   }
-  
+
   .btn-highlight {
-    @apply bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-primary/40;
+    @apply bg-[#0096FF] hover:bg-[#0084E3] text-white font-medium py-3 px-8 rounded-md transition-all duration-200;
   }
-  
+
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-[#0F2B46] font-medium py-3 px-8 rounded-md border border-gray-200 transition-all duration-200;
+  }
+
+  .btn-outline {
+    @apply bg-transparent hover:bg-[#0096FF]/10 text-[#0096FF] font-medium py-3 px-8 rounded-md border border-[#0096FF] transition-all duration-200;
+  }
+
   .shadow-text {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-[#0F2B46] font-bold;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-[#0F2B46] mb-6;
+  }
+
+  .section-subtitle {
+    @apply text-xl text-gray-600 mb-10 max-w-3xl mx-auto;
   }
 }

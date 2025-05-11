@@ -177,27 +177,24 @@ const Header = () => {
   return (
     <header className={`sticky top-0 z-40 w-full ${isScrolled ? 'shadow-md' : ''}`}>
       {/* Top Bar */}
-      <div className="bg-neutral-800 text-neutral-100 text-sm py-1 px-4">
+      <div className="bg-[#0F2B46] text-white text-sm py-2 px-4">
         <div className="container mx-auto flex justify-between items-center">
           <LanguageSwitcher />
-          <div className="hidden md:flex gap-4 text-neutral-300">
+          <div className="hidden md:flex gap-6 text-white">
             {user && user.role === "ADMIN" && (
               <>
                 <a
                   href="/admin"
-                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded-sm transition-colors flex items-center"
+                  className="bg-[#0096FF] hover:bg-[#0084E3] text-white px-3 py-1 rounded-md transition-colors flex items-center"
                 >
                   <Settings className="h-3 w-3 mr-1" />
                   {t("admin.adminPanel")}
                 </a>
-                <span>|</span>
               </>
             )}
-            <a href="#" className="hover:text-white transition-colors">{t("nav.help")}</a>
-            <span>|</span>
-            <a href="#" className="hover:text-white transition-colors">{t("nav.about")}</a>
-            <span>|</span>
-            <a href="#" className="hover:text-white transition-colors">{t("nav.contact")}</a>
+            <a href="#" className="hover:text-[#0096FF] transition-colors">{t("nav.help")}</a>
+            <a href="#" className="hover:text-[#0096FF] transition-colors">{t("nav.about")}</a>
+            <a href="#" className="hover:text-[#0096FF] transition-colors">{t("nav.contact")}</a>
           </div>
         </div>
       </div>
@@ -208,12 +205,12 @@ const Header = () => {
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
             <div className="flex items-center">
-              <Link href="/" className="font-heading font-bold text-2xl text-primary-600 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-2" viewBox="0 0 24 24" fill="currentColor">
+              <Link href="/" className="font-heading font-bold text-2xl text-[#0F2B46] flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-2 text-[#0096FF]" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.906 9c.382 0 .749.057 1.094.162V4a1 1 0 0 0-1-1h-10a1 1 0 0 0-.707.293l-4 4A1 1 0 0 0 5 8v11a1 1 0 0 0 1 1h7.277c-.368-.487-.714-1.002-1.015-1.547L10 18H7v-2h2.053c-.243-1.679-.243-3.321 0-5H7v-2h2.662c1.142-1.822 2.595-3.406 4.597-4.581 1.051-.616 2.036-1.063 3.14-1.377a7.866 7.866 0 0 1 2.507-.326V4h-7.586l-3-3H20.906V9zm-10.2-3H6.414l3-3h.292v3z"/>
                   <circle cx="19.906" cy="13" r="4" stroke="currentColor" strokeWidth="2" fill="none"/>
                 </svg>
-                Cimplico <span className="text-neutral-500">Marketplace</span>
+                Cimplico <span className="text-[#0096FF]">Marketplace</span>
               </Link>
             </div>
 
@@ -223,14 +220,14 @@ const Header = () => {
                 <Input
                   type="text"
                   placeholder={t("common.search") + "..."}
-                  className="w-full py-2 pl-10 pr-16 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full py-2 pl-10 pr-16 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0096FF]/50 focus:border-[#0096FF]"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 h-5 w-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Button
                   type="submit"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-primary-500 hover:bg-primary-600 text-white py-1 px-3 h-8"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#0096FF] hover:bg-[#0084E3] text-white py-1 px-3 h-8 rounded-md"
                 >
                   {t("common.search")}
                 </Button>
@@ -296,32 +293,32 @@ const Header = () => {
           </div>
 
           {/* Main Navigation */}
-          <nav className="hidden md:block border-t border-neutral-200">
+          <nav className="hidden md:block border-t border-gray-100">
             <ul className="flex space-x-8 py-3">
               <li>
                 <Link href="/">
-                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                  <span className="text-[#0F2B46] hover:text-[#0096FF] font-medium pb-3 hover:border-b-2 hover:border-[#0096FF] transition-colors">
                     {t("nav.home")}
                   </span>
                 </Link>
               </li>
               <li className="relative group">
                 <Link href="/marketplace">
-                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 group-hover:border-b-2 group-hover:border-primary-500 transition-colors flex items-center">
+                  <span className="text-[#0F2B46] hover:text-[#0096FF] font-medium pb-3 group-hover:border-b-2 group-hover:border-[#0096FF] transition-colors flex items-center">
                     {t("nav.categories")} <ChevronDown className="ml-1 h-4 w-4" />
                   </span>
                 </Link>
-                <div className="absolute left-0 top-full bg-white shadow-lg rounded-lg w-64 hidden group-hover:block z-50">
+                <div className="absolute left-0 top-full bg-white shadow-lg rounded-md w-64 hidden group-hover:block z-50">
                   <ul className="py-2">
                     {isCategoriesLoading ? (
-                      <li className="px-4 py-2 text-neutral-400">加载分类中...</li>
+                      <li className="px-4 py-2 text-gray-400">{t("common.loading")}</li>
                     ) : categoriesData.length === 0 ? (
-                      <li className="px-4 py-2 text-neutral-400">暂无分类</li>
+                      <li className="px-4 py-2 text-gray-400">{t("common.empty")}</li>
                     ) : (
                       categoriesData.map((cat: any) => (
                         <li key={cat.id}>
                           <Link href={`/marketplace?category=${encodeURIComponent(cat.name)}`}>
-                            <span className="block px-4 py-2 hover:bg-neutral-100">
+                            <span className="block px-4 py-2 hover:bg-gray-50 text-[#0F2B46]">
                               {cat.name}
                             </span>
                           </Link>
@@ -330,7 +327,7 @@ const Header = () => {
                     )}
                     <li>
                       <Link href="/marketplace">
-                        <span className="block px-4 py-2 hover:bg-neutral-100">查看全部分类</span>
+                        <span className="block px-4 py-2 hover:bg-gray-50 text-[#0096FF] font-medium">{t("categories.all")}</span>
                       </Link>
                     </li>
                   </ul>
@@ -338,28 +335,28 @@ const Header = () => {
               </li>
               <li>
                 <Link href="/marketplace?featured=true">
-                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                  <span className="text-[#0F2B46] hover:text-[#0096FF] font-medium pb-3 hover:border-b-2 hover:border-[#0096FF] transition-colors">
                     {t("home.featured.title")}
                   </span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?vendors=true">
-                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                  <span className="text-[#0F2B46] hover:text-[#0096FF] font-medium pb-3 hover:border-b-2 hover:border-[#0096FF] transition-colors">
                     {t("nav.vendors")}
                   </span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?newArrivals=true">
-                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                  <span className="text-[#0F2B46] hover:text-[#0096FF] font-medium pb-3 hover:border-b-2 hover:border-[#0096FF] transition-colors">
                     {t("nav.newArrivals")}
                   </span>
                 </Link>
               </li>
               <li>
                 <Link href="/marketplace?freeOnly=true">
-                  <span className="text-neutral-600 hover:text-primary-600 font-medium pb-3 hover:border-b-2 hover:border-primary-500 transition-colors">
+                  <span className="text-[#0F2B46] hover:text-[#0096FF] font-medium pb-3 hover:border-b-2 hover:border-[#0096FF] transition-colors">
                     {t("nav.freeResources")}
                   </span>
                 </Link>

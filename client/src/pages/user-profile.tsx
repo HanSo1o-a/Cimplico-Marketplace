@@ -642,7 +642,7 @@ const UserProfile = () => {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("修改密码")}</CardTitle>
+                  <CardTitle>{t("user.changePassword")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Form {...passwordForm}>
@@ -652,7 +652,7 @@ const UserProfile = () => {
                         name="currentPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("当前密码")}</FormLabel>
+                            <FormLabel>{t("user.currentPassword")}</FormLabel>
                             <FormControl>
                               <Input type="password" {...field} />
                             </FormControl>
@@ -666,7 +666,7 @@ const UserProfile = () => {
                         name="newPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("新密码")}</FormLabel>
+                            <FormLabel>{t("user.newPassword")}</FormLabel>
                             <FormControl>
                               <Input type="password" {...field} />
                             </FormControl>
@@ -680,7 +680,7 @@ const UserProfile = () => {
                         name="confirmPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("确认密码")}</FormLabel>
+                            <FormLabel>{t("user.confirmPassword")}</FormLabel>
                             <FormControl>
                               <Input type="password" {...field} />
                             </FormControl>
