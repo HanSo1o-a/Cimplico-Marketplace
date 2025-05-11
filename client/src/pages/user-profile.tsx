@@ -116,14 +116,14 @@ const UserProfile = () => {
       // 直接获取单个订单的详细信息
       const response = await fetch(`/api/orders/${orderId}`);
       if (!response.ok) throw new Error('获取订单详情失败');
-      
+
       const orderData = await response.json();
-      
+
       // 如果有商品信息，返回第一个商品的标题
       if (orderData.items && orderData.items.length > 0 && orderData.items[0].listing) {
         return orderData.items[0].listing.title;
       }
-      
+
       // 如果没有商品信息，返回默认文本
       return `订单 #${orderId}`;
     } catch (error) {
@@ -460,9 +460,9 @@ const UserProfile = () => {
           {activeTab === "orders" && (
             <Card>
               <CardHeader>
-                <CardTitle>{t("订单")}</CardTitle>
+                <CardTitle>{t("order.title")}</CardTitle>
                 <CardDescription>
-                  {t("查看您的订单历史")}
+                  {t("user.viewOrderHistory")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -478,18 +478,18 @@ const UserProfile = () => {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-3 px-4 font-medium">{t("订单号")}</th>
-                          <th className="text-left py-3 px-4 font-medium">{t("订单项目")}</th>
-                          <th className="text-left py-3 px-4 font-medium">{t("订单状态")}</th>
-                          <th className="text-left py-3 px-4 font-medium">{t("订单日期")}</th>
-                          <th className="text-right py-3 px-4 font-medium">{t("订单总额")}</th>
-                          <th className="text-right py-3 px-4 font-medium">{t("操作")}</th>
+                          <th className="text-left py-3 px-4 font-medium">{t("order.id")}</th>
+                          <th className="text-left py-3 px-4 font-medium">{t("order.items")}</th>
+                          <th className="text-left py-3 px-4 font-medium">{t("order.statusLabel")}</th>
+                          <th className="text-left py-3 px-4 font-medium">{t("order.date")}</th>
+                          <th className="text-right py-3 px-4 font-medium">{t("order.total")}</th>
+                          <th className="text-right py-3 px-4 font-medium">{t("common.actions")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {orders.map((order: any) => {
                           // 使用获取到的订单项目名称，如果还没获取到则使用默认值
-                          const orderName = orderItemNames[order.id] || `订单 #${order.id}`;
+                          const orderName = orderItemNames[order.id] || `${t("order.title")} #${order.id}`;
                           const itemCount = order.items?.length || 0;
 
                           return (
@@ -502,7 +502,7 @@ const UserProfile = () => {
                                   {orderName}
                                 </div>
                                 {itemCount > 1 && (
-                                  <div className="text-xs text-neutral-500">+{itemCount - 1} {t("更多")}</div>
+                                  <div className="text-xs text-neutral-500">+{itemCount - 1} {t("common.more")}</div>
                                 )}
                               </td>
                               <td className="py-4 px-4">
@@ -515,12 +515,12 @@ const UserProfile = () => {
                                     "bg-yellow-100 text-yellow-800"
                                   }`}
                                 >
-                                  {order.status === "PAID" && t("已支付")}
-                                  {order.status === "COMPLETED" && t("已完成")}
-                                  {order.status === "CANCELLED" && t("已取消")}
-                                  {order.status === "CREATED" && t("已下单")}
-                                  {order.status === "SHIPPED" && t("已发货")}
-                                  {order.status === "REFUNDED" && t("已退款")}
+                                  {order.status === "PAID" && t("order.status.PAID")}
+                                  {order.status === "COMPLETED" && t("order.status.COMPLETED")}
+                                  {order.status === "CANCELLED" && t("order.status.CANCELLED")}
+                                  {order.status === "CREATED" && t("order.status.CREATED")}
+                                  {order.status === "SHIPPED" && t("order.status.SHIPPED")}
+                                  {order.status === "REFUNDED" && t("order.status.REFUNDED")}
                                 </span>
                               </td>
                               <td className="py-4 px-4 text-neutral-500">
@@ -530,12 +530,12 @@ const UserProfile = () => {
                                 ¥{order.totalAmount.toFixed(2)}
                               </td>
                               <td className="py-4 px-4 text-right">
-                                <Button 
+                                <Button
                                   onClick={() => navigate(`/orders/${order.id}`)}
                                   variant="outline"
                                   size="sm"
                                 >
-                                  {t("查看详情")}
+                                  {t("order.viewDetails")}
                                 </Button>
                               </td>
                             </tr>
@@ -547,10 +547,10 @@ const UserProfile = () => {
                 ) : (
                   <div className="text-center py-12">
                     <ShoppingBag className="mx-auto h-12 w-12 text-neutral-300 mb-4" />
-                    <h3 className="text-lg font-medium text-neutral-900 mb-1">{t("您还没有订单")}</h3>
-                    <p className="text-neutral-500 mb-4">{t("开始购物吧！")}</p>
+                    <h3 className="text-lg font-medium text-neutral-900 mb-1">{t("user.noOrders")}</h3>
+                    <p className="text-neutral-500 mb-4">{t("user.startShopping")}</p>
                     <Button onClick={() => navigate("/marketplace")}>
-                      {t("继续购物")}
+                      {t("user.continueShopping")}
                     </Button>
                   </div>
                 )}
@@ -562,9 +562,9 @@ const UserProfile = () => {
           {activeTab === "favorites" && (
             <Card>
               <CardHeader>
-                <CardTitle>{t("收藏")}</CardTitle>
+                <CardTitle>{t("user.favorites")}</CardTitle>
                 <CardDescription>
-                  {t("查看您收藏的商品")}
+                  {t("user.viewFavorites")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -607,13 +607,13 @@ const UserProfile = () => {
                             await refetchFavorites();
 
                             toast({
-                              title: newIsSavedState ? t("已成功收藏") : t("已取消收藏"),
+                              title: newIsSavedState ? t("user.favoriteAdded") : t("user.favoriteRemoved"),
                             });
 
                           } catch (error) {
                             toast({
-                              title: newIsSavedState ? t("收藏失败") : t("取消收藏失败"),
-                              description: error instanceof Error ? error.message : t("未知错误"),
+                              title: newIsSavedState ? t("user.favoriteAddFailed") : t("user.favoriteRemoveFailed"),
+                              description: error instanceof Error ? error.message : t("common.unknownError"),
                               variant: "destructive",
                             });
                             // 如果API调用失败，也建议刷新一下列表，以确保UI与服务器状态一致
@@ -626,10 +626,10 @@ const UserProfile = () => {
                 ) : (
                   <div className="text-center py-12">
                     <Heart className="mx-auto h-12 w-12 text-neutral-300 mb-4" />
-                    <h3 className="text-lg font-medium text-neutral-900 mb-1">{t("您还没有收藏")}</h3>
-                    <p className="text-neutral-500 mb-4">{t("开始探索吧！")}</p>
+                    <h3 className="text-lg font-medium text-neutral-900 mb-1">{t("user.noFavorites")}</h3>
+                    <p className="text-neutral-500 mb-4">{t("user.startExploring")}</p>
                     <Button onClick={() => navigate("/marketplace")}>
-                      {t("继续购物")}
+                      {t("user.continueShopping")}
                     </Button>
                   </div>
                 )}

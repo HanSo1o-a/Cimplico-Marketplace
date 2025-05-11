@@ -69,8 +69,10 @@ const Header = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/marketplace?search=${encodeURIComponent(searchQuery)}`);
-      setSearchQuery("");
+      // 导航到marketplace页面并带上搜索参数
+      navigate(`/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+      // 不清空搜索框，这样用户可以看到他们搜索了什么
+      // setSearchQuery("");
     }
   };
 

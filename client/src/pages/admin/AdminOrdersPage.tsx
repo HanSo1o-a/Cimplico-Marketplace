@@ -16,27 +16,27 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  CheckCircle, 
-  Clock, 
-  Package, 
-  RefreshCcw, 
-  ShieldOff, 
-  Search, 
-  Filter, 
-  User, 
+import {
+  CheckCircle,
+  Clock,
+  Package,
+  RefreshCcw,
+  ShieldOff,
+  Search,
+  Filter,
+  User,
   Download,
   ChevronDown,
   ChevronUp,
@@ -116,7 +116,7 @@ const AdminOrdersPage: React.FC = () => {
   const { user } = useAuth();
   const [location, navigate] = useLocation();
   const { toast } = useToast();
-  
+
   // 状态管理
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -143,7 +143,7 @@ const AdminOrdersPage: React.FC = () => {
   // 加载订单项数据
   const loadOrderItems = async (orderId: number) => {
     if (orderItemsMap[orderId]) return; // 已加载过，不重复加载
-    
+
     try {
       setLoadingOrderItems(prev => ({ ...prev, [orderId]: true }));
       const details = await fetchOrderDetails(orderId);
@@ -171,7 +171,7 @@ const AdminOrdersPage: React.FC = () => {
       try {
         // 使用统计接口获取所有订单数据
         const response = await apiRequest("GET", `/api/admin/statistics/orders?timeRange=${timeRange}`);
-        
+
         // 将统计接口返回的数据格式转换为订单页面需要的格式
         if (response && Array.isArray(response)) {
           return response.map(order => ({
@@ -239,12 +239,12 @@ const AdminOrdersPage: React.FC = () => {
       setLoadingUserData(true);
       // 首先尝试从已加载的用户列表中查找
       const userFromList = users.find((u: User) => u.id === userId);
-      
+
       if (userFromList) {
         setSelectedUserData(userFromList);
         return userFromList;
       }
-      
+
       // 如果列表中没有，尝试从API获取
       const response = await apiRequest("GET", `/api/users/${userId}`);
       setSelectedUserData(response);
@@ -385,7 +385,7 @@ const AdminOrdersPage: React.FC = () => {
 
   const handleCancel = async () => {
     if (!selectedOrder || !cancelReason.trim()) return;
-    
+
     try {
       // 模拟取消订单操作
       toast({
@@ -406,9 +406,9 @@ const AdminOrdersPage: React.FC = () => {
 
   // 切换订单展开状态
   const toggleOrderExpand = (orderId: number) => {
-    setExpandedOrders(prev => 
-      prev.includes(orderId) 
-        ? prev.filter(id => id !== orderId) 
+    setExpandedOrders(prev =>
+      prev.includes(orderId)
+        ? prev.filter(id => id !== orderId)
         : [...prev, orderId]
     );
   };
@@ -438,17 +438,17 @@ const AdminOrdersPage: React.FC = () => {
     if (statusFilter !== "ALL" && order.status !== statusFilter) {
       return false;
     }
-    
+
     // 搜索过滤
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       const orderIdMatch = order.id.toString().includes(searchLower);
       const userIdMatch = order.userId.toString().includes(searchLower);
       const customerMatch = getUserName(order.userId).toLowerCase().includes(searchLower);
-      
+
       return orderIdMatch || userIdMatch || customerMatch;
     }
-    
+
     return true;
   });
 
@@ -478,15 +478,15 @@ const AdminOrdersPage: React.FC = () => {
   const renderStatusText = (status: string) => {
     switch (status) {
       case "CREATED":
-        return "已下单";
+        return t("order.status.CREATED");
       case "PAID":
-        return "已支付";
+        return t("order.status.PAID");
       case "SHIPPED":
-        return "已发货";
+        return t("order.status.SHIPPED");
       case "COMPLETED":
-        return "已完成";
+        return t("order.status.COMPLETED");
       case "CANCELLED":
-        return "已取消";
+        return t("order.status.CANCELLED");
       default:
         return status;
     }
@@ -498,13 +498,13 @@ const AdminOrdersPage: React.FC = () => {
     if (user) {
       return `${user.firstName} ${user.lastName}`;
     }
-    return `用户 #${userId}`;
+    return `${t("admin.user")} #${userId}`;
   };
 
   return (
     <>
       <h1 className="text-3xl font-bold mb-6">{t("admin.orderManagement")}</h1>
-      
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>{t("admin.orderFilters")}</CardTitle>
@@ -555,8 +555,8 @@ const AdminOrdersPage: React.FC = () => {
               </Select>
             </div>
             <div className="w-full md:w-1/4 flex justify-end">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setSearchTerm("");
                   setStatusFilter("ALL");
@@ -602,7 +602,7 @@ const AdminOrdersPage: React.FC = () => {
                             {t("order.total")}: ¥{formatPrice(order.totalAmount)}
                           </p>
                         </div>
-                        
+
                         {/* 展开/折叠的订单项目 */}
                         {expandedOrders.includes(order.id) && (
                           <div className="mt-4 space-y-2">
@@ -613,19 +613,19 @@ const AdminOrdersPage: React.FC = () => {
                                 <div key={item.id} className="bg-gray-50 p-3 rounded-md">
                                   <div className="flex items-start">
                                     <div className="h-12 w-12 rounded overflow-hidden mr-3 flex-shrink-0">
-                                      <img 
+                                      <img
                                         src={item.listing?.images?.[0] || "https://via.placeholder.com/150"}
-                                        alt={item.listing?.title || "商品图片"} 
+                                        alt={item.listing?.title || "商品图片"}
                                         className="h-full w-full object-cover"
                                       />
                                     </div>
                                     <div className="flex-grow">
                                       <div className="flex justify-between">
-                                        <h3 className="font-medium">{item.listing?.title || `商品 #${item.listingId}`}</h3>
+                                        <h3 className="font-medium">{item.listing?.title || `${t("product.title")} #${item.listingId}`}</h3>
                                         <p className="font-medium">¥{formatPrice(item.unitPrice)}</p>
                                       </div>
                                       <div className="text-sm text-gray-500">
-                                        数量: {item.quantity}
+                                        {t("cart.quantity")}: {item.quantity}
                                       </div>
                                     </div>
                                   </div>
@@ -637,7 +637,7 @@ const AdminOrdersPage: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="flex flex-col gap-2">
                         <div className="flex gap-2 justify-end">
                           <Button
@@ -666,7 +666,7 @@ const AdminOrdersPage: React.FC = () => {
                             <Eye className="mr-1 h-3 w-3" /> {t("common.view")}
                           </Button>
                         </div>
-                        
+
                         <div className="flex gap-2 justify-end mt-2">
                           {order.status === "PAID" && (
                             <Button
@@ -717,7 +717,7 @@ const AdminOrdersPage: React.FC = () => {
               {t("admin.orderDetailsDesc")}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedOrder && (
             <div className="mt-4">
               <Tabs defaultValue="details">
@@ -726,7 +726,7 @@ const AdminOrdersPage: React.FC = () => {
                   <TabsTrigger value="items">{t("admin.orderItems")}</TabsTrigger>
                   <TabsTrigger value="customer">{t("admin.customerInfo")}</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="details">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div className="bg-gray-50 p-4 rounded-md">
@@ -756,12 +756,12 @@ const AdminOrdersPage: React.FC = () => {
                       <p className="font-medium">{selectedOrder?.paymentId || t("order.notSpecified")}</p>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-md mb-4">
                     <h3 className="font-medium text-sm text-gray-500 mb-1">{t("order.notes")}</h3>
                     <p className="font-medium">{selectedOrder?.notes || t("order.noNotes")}</p>
                   </div>
-                  
+
                   <div className="flex justify-between items-center mt-4">
                     <div>
                       {selectedOrder.status === "PAID" && (
@@ -792,7 +792,7 @@ const AdminOrdersPage: React.FC = () => {
                     </Button>
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="items">
                   <div className="space-y-4">
                     {selectedOrder?.items && selectedOrder.items.length > 0 ? (
@@ -801,26 +801,26 @@ const AdminOrdersPage: React.FC = () => {
                           <div className="flex items-start">
                             {item.listing?.images && Array.isArray(item.listing.images) && item.listing.images.length > 0 && (
                               <div className="h-16 w-16 rounded overflow-hidden mr-4 flex-shrink-0">
-                                <img 
+                                <img
                                   src={typeof item.listing.images[0] === 'string' ? item.listing.images[0] : ''}
-                                  alt={item.listing?.title || '商品图片'} 
+                                  alt={item.listing?.title || '商品图片'}
                                   className="h-full w-full object-cover"
                                 />
                               </div>
                             )}
                             <div className="flex-grow">
                               <div className="flex justify-between">
-                                <h3 className="font-medium">{item.listing?.title || `商品 #${item.listingId}`}</h3>
+                                <h3 className="font-medium">{item.listing?.title || `${t("product.title")} #${item.listingId}`}</h3>
                                 <p className="font-medium">¥{formatPrice(item.unitPrice)}</p>
                               </div>
                               <div className="flex justify-between text-sm text-gray-500 mt-1">
-                                <p>数量: {item.quantity}</p>
-                                <p>类型: {item.listing?.type === "DIGITAL" ? "数字产品" : "实体产品"}</p>
+                                <p>{t("cart.quantity")}: {item.quantity}</p>
+                                <p>{t("product.type")}: {item.listing?.type === "DIGITAL" ? t("product.digital") : t("product.physical")}</p>
                               </div>
-                              {(selectedOrder.status === "SHIPPED" || selectedOrder.status === "COMPLETED") && 
+                              {(selectedOrder.status === "SHIPPED" || selectedOrder.status === "COMPLETED") &&
                                item.listing?.downloadUrl && (
                                 <div className="mt-3">
-                                  <a 
+                                  <a
                                     href={item.listing.downloadUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
@@ -838,15 +838,15 @@ const AdminOrdersPage: React.FC = () => {
                     ) : (
                       <p className="text-center py-4 text-gray-500">{t("order.noItems")}</p>
                     )}
-                    
+
                     <div className="bg-white p-4 rounded-md border">
                       <div className="flex justify-between py-2">
                         <span>{t("order.subtotal")}</span>
                         <span>¥{formatPrice(selectedOrder.totalAmount)}</span>
                       </div>
-                      
+
                       <Separator className="my-2" />
-                      
+
                       <div className="flex justify-between py-2 font-bold">
                         <span>{t("order.total")}</span>
                         <span>¥{formatPrice(selectedOrder.totalAmount)}</span>
@@ -854,7 +854,7 @@ const AdminOrdersPage: React.FC = () => {
                     </div>
                   </div>
                 </TabsContent>
-                
+
                 <TabsContent value="customer">
                   <div className="bg-gray-50 p-4 rounded-md mb-4">
                     <div className="flex items-center mb-4">
@@ -864,9 +864,9 @@ const AdminOrdersPage: React.FC = () => {
                         <p className="text-sm text-gray-500">{t("order.userId")}: {selectedOrder.userId ? getUserName(selectedOrder.userId) : ''}</p>
                       </div>
                     </div>
-                    
-                    <Button 
-                      variant="outline" 
+
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         if (selectedOrder.userId) {
@@ -877,7 +877,7 @@ const AdminOrdersPage: React.FC = () => {
                       {t("admin.viewCustomer")}
                     </Button>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-md">
                     <h3 className="font-medium mb-2">{t("order.orderHistory")}</h3>
                     <div className="space-y-2">
@@ -927,7 +927,7 @@ const AdminOrdersPage: React.FC = () => {
               {t("admin.cancelOrderDesc")}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <label htmlFor="cancelReason" className="text-sm font-medium">
@@ -941,13 +941,13 @@ const AdminOrdersPage: React.FC = () => {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
               {t("common.cancel")}
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleCancel}
               disabled={!cancelReason.trim()}
             >
@@ -966,7 +966,7 @@ const AdminOrdersPage: React.FC = () => {
               {t("admin.customerDetailsDesc")}
             </DialogDescription>
           </DialogHeader>
-          
+
           {loadingUserData ? (
             <div className="flex justify-center py-8">
               <Spinner />
@@ -981,7 +981,7 @@ const AdminOrdersPage: React.FC = () => {
                     <p className="text-sm text-gray-500">{t("admin.userId")}: {selectedUserData.id}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2 mt-4">
                   <div className="flex justify-between">
                     <span className="text-gray-500">{t("admin.email")}:</span>
@@ -1011,14 +1011,14 @@ const AdminOrdersPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-gray-50 p-4 rounded-md">
                 <h3 className="font-medium mb-2">{t("admin.orders")}</h3>
                 <div className="space-y-2">
                   {userOrders.length > 0 ? (
                     userOrders.map(order => (
                       <div key={order.id} className="flex justify-between">
-                        <span>订单 # {order.id}</span>
+                        <span>{t("order.title")} # {order.id}</span>
                         <span>¥{formatPrice(order.totalAmount)}</span>
                       </div>
                     ))
@@ -1027,7 +1027,7 @@ const AdminOrdersPage: React.FC = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="bg-gray-50 p-4 rounded-md">
                 <h3 className="font-medium mb-2">{t("admin.favorites")}</h3>
                 <div className="space-y-2">
@@ -1043,7 +1043,7 @@ const AdminOrdersPage: React.FC = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="flex justify-end">
                 <Button variant="outline" onClick={() => setUserDialogOpen(false)}>
                   {t("common.close")}

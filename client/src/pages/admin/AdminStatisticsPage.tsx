@@ -34,13 +34,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BarChart3, 
-  Search, 
-  Download, 
-  DollarSign, 
-  ShoppingBag, 
-  Users, 
+import {
+  BarChart3,
+  Search,
+  Download,
+  DollarSign,
+  ShoppingBag,
+  Users,
   Store,
   Calendar,
   ArrowUpDown,
@@ -106,7 +106,7 @@ const AdminStatisticsPage: React.FC = () => {
     queryFn: async () => {
       try {
         const response = await apiRequest(
-          "GET", 
+          "GET",
           `/api/admin/statistics/users?timeRange=${timeRange}`
         );
         return response || [];
@@ -128,7 +128,7 @@ const AdminStatisticsPage: React.FC = () => {
     queryFn: async () => {
       try {
         const response = await apiRequest(
-          "GET", 
+          "GET",
           `/api/admin/statistics/vendors?timeRange=${timeRange}`
         );
         return response || [];
@@ -150,7 +150,7 @@ const AdminStatisticsPage: React.FC = () => {
     queryFn: async () => {
       try {
         const response = await apiRequest(
-          "GET", 
+          "GET",
           `/api/admin/statistics/orders?timeRange=${timeRange}`
         );
         return response || [];
@@ -176,7 +176,7 @@ const AdminStatisticsPage: React.FC = () => {
     const firstName = user.firstName || '';
     const lastName = user.lastName || '';
     const email = user.email || '';
-    
+
     return firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -184,7 +184,7 @@ const AdminStatisticsPage: React.FC = () => {
 
   const sortedUserStats = [...filteredUserStats].sort((a, b) => {
     let comparison = 0;
-    
+
     switch (sortField) {
       case "name":
         const aName = `${a.firstName || ''} ${a.lastName || ''}`.trim();
@@ -214,7 +214,7 @@ const AdminStatisticsPage: React.FC = () => {
       default:
         comparison = (a.totalSpent || 0) - (b.totalSpent || 0);
     }
-    
+
     return sortDirection === "asc" ? comparison : -comparison;
   });
 
@@ -226,7 +226,7 @@ const AdminStatisticsPage: React.FC = () => {
 
   const sortedVendorStats = [...filteredVendorStats].sort((a, b) => {
     let comparison = 0;
-    
+
     switch (sortField) {
       case "name":
         const aName = a.companyName || '';
@@ -256,7 +256,7 @@ const AdminStatisticsPage: React.FC = () => {
       default:
         comparison = (a.totalSales || 0) - (b.totalSales || 0);
     }
-    
+
     return sortDirection === "asc" ? comparison : -comparison;
   });
 
@@ -264,20 +264,20 @@ const AdminStatisticsPage: React.FC = () => {
   const filteredOrderRecords = orderRecords.filter(order => {
     const userName = order.userName || '';
     const userEmail = order.userEmail || '';
-    
+
     // 检查用户名和邮箱
     const userMatch = userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       userEmail.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     // 检查订单项
     const itemsMatch = order.items && order.items.some(item => {
       const listingTitle = item.listingTitle || '';
       const vendorName = item.vendorName || '';
-      
+
       return listingTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
              vendorName.toLowerCase().includes(searchTerm.toLowerCase());
     });
-    
+
     return userMatch || itemsMatch;
   });
 
@@ -293,8 +293,8 @@ const AdminStatisticsPage: React.FC = () => {
 
   // 切换订单展开状态
   const toggleOrderExpand = (orderId: number) => {
-    setExpandedOrders(prev => 
-      prev.includes(orderId) 
+    setExpandedOrders(prev =>
+      prev.includes(orderId)
         ? prev.filter(id => id !== orderId)
         : [...prev, orderId]
     );
@@ -303,8 +303,8 @@ const AdminStatisticsPage: React.FC = () => {
   // 渲染排序图标
   const renderSortIcon = (field: string) => {
     if (sortField !== field) return <ArrowUpDown className="h-4 w-4 ml-1" />;
-    return sortDirection === "asc" 
-      ? <ChevronUp className="h-4 w-4 ml-1" /> 
+    return sortDirection === "asc"
+      ? <ChevronUp className="h-4 w-4 ml-1" />
       : <ChevronDown className="h-4 w-4 ml-1" />;
   };
 
@@ -312,13 +312,13 @@ const AdminStatisticsPage: React.FC = () => {
   const renderStatusBadge = (status: string) => {
     switch (status.toUpperCase()) {
       case "COMPLETED":
-        return <Badge className="bg-green-100 text-green-800">已完成</Badge>;
+        return <Badge className="bg-green-100 text-green-800">{t("order.status.COMPLETED")}</Badge>;
       case "PROCESSING":
-        return <Badge className="bg-blue-100 text-blue-800">处理中</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800">{t("order.status.SHIPPED")}</Badge>;
       case "PENDING":
-        return <Badge className="bg-yellow-100 text-yellow-800">待处理</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">{t("order.status.CREATED")}</Badge>;
       case "CANCELLED":
-        return <Badge className="bg-red-100 text-red-800">已取消</Badge>;
+        return <Badge className="bg-red-100 text-red-800">{t("order.status.CANCELLED")}</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -328,13 +328,13 @@ const AdminStatisticsPage: React.FC = () => {
   const renderPaymentStatusBadge = (status: string) => {
     switch (status.toUpperCase()) {
       case "PAID":
-        return <Badge className="bg-green-100 text-green-800">已支付</Badge>;
+        return <Badge className="bg-green-100 text-green-800">{t("order.status.PAID")}</Badge>;
       case "PENDING":
-        return <Badge className="bg-yellow-100 text-yellow-800">待支付</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">{t("order.statusDescription.CREATED")}</Badge>;
       case "FAILED":
-        return <Badge className="bg-red-100 text-red-800">支付失败</Badge>;
+        return <Badge className="bg-red-100 text-red-800">{t("checkout.paymentFailed")}</Badge>;
       case "REFUNDED":
-        return <Badge className="bg-purple-100 text-purple-800">已退款</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800">{t("order.status.REFUNDED")}</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -343,7 +343,7 @@ const AdminStatisticsPage: React.FC = () => {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">{t("admin.statistics")}</h1>
-      
+
       {/* 统计概览卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
@@ -362,7 +362,7 @@ const AdminStatisticsPage: React.FC = () => {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium flex items-center">
@@ -379,7 +379,7 @@ const AdminStatisticsPage: React.FC = () => {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-medium flex items-center">
@@ -397,7 +397,7 @@ const AdminStatisticsPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* 时间范围和搜索筛选 */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center gap-2">
@@ -417,13 +417,13 @@ const AdminStatisticsPage: React.FC = () => {
               <SelectItem value="year">{t("admin.statistics.thisYear")}</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Button variant="outline" className="ml-2">
             <Download className="mr-2 h-4 w-4" />
             {t("admin.statistics.exportData")}
           </Button>
         </div>
-        
+
         <div className="relative w-full sm:w-auto">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -435,7 +435,7 @@ const AdminStatisticsPage: React.FC = () => {
           />
         </div>
       </div>
-      
+
       {/* 统计数据标签页 */}
       <Tabs defaultValue="users" className="w-full">
         <TabsList className="mb-6">
@@ -452,7 +452,7 @@ const AdminStatisticsPage: React.FC = () => {
             {t("admin.statistics.orderRecords")}
           </TabsTrigger>
         </TabsList>
-        
+
         {/* 用户消费标签页 */}
         <TabsContent value="users">
           <Card>
@@ -521,15 +521,15 @@ const AdminStatisticsPage: React.FC = () => {
                 </Table>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  {searchTerm 
-                    ? t("admin.statistics.noMatchingUsers") 
+                  {searchTerm
+                    ? t("admin.statistics.noMatchingUsers")
                     : t("admin.statistics.noUserData")}
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* 供应商销售标签页 */}
         <TabsContent value="vendors">
           <Card>
@@ -596,15 +596,15 @@ const AdminStatisticsPage: React.FC = () => {
                 </Table>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  {searchTerm 
-                    ? t("admin.statistics.noMatchingVendors") 
+                  {searchTerm
+                    ? t("admin.statistics.noMatchingVendors")
                     : t("admin.statistics.noVendorData")}
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* 订单记录标签页 */}
         <TabsContent value="orders">
           <Card>
@@ -652,8 +652,8 @@ const AdminStatisticsPage: React.FC = () => {
                             {renderPaymentStatusBadge(order.paymentStatus)}
                           </TableCell>
                           <TableCell className="text-center">
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => toggleOrderExpand(order.id)}
                             >
@@ -665,7 +665,7 @@ const AdminStatisticsPage: React.FC = () => {
                             </Button>
                           </TableCell>
                         </TableRow>
-                        
+
                         {/* 展开的订单详情 */}
                         {expandedOrders.includes(order.id) && (
                           <TableRow className="bg-muted/50">
@@ -708,8 +708,8 @@ const AdminStatisticsPage: React.FC = () => {
                 </Table>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  {searchTerm 
-                    ? t("admin.statistics.noMatchingOrders") 
+                  {searchTerm
+                    ? t("admin.statistics.noMatchingOrders")
                     : t("admin.statistics.noOrderData")}
                 </div>
               )}
