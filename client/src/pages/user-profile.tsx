@@ -211,14 +211,14 @@ const UserProfile = () => {
     },
     onSuccess: () => {
       toast({
-        title: t("个人资料更新成功"),
+        title: t("user.profileUpdated"),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
     },
     onError: (error) => {
       toast({
-        title: t("更新失败"),
-        description: error instanceof Error ? error.message : t("未知错误"),
+        title: t("user.profileUpdateFailed"),
+        description: error instanceof Error ? error.message : t("common.unknownError"),
         variant: "destructive",
       });
     },
@@ -240,14 +240,14 @@ const UserProfile = () => {
     },
     onSuccess: () => {
       toast({
-        title: t("密码修改成功"),
+        title: t("user.passwordChanged"),
       });
       passwordForm.reset();
     },
     onError: (error) => {
       toast({
-        title: t("密码修改失败"),
-        description: error instanceof Error ? error.message : t("未知错误"),
+        title: t("user.passwordChangeFailed"),
+        description: error instanceof Error ? error.message : t("common.unknownError"),
         variant: "destructive",
       });
     },
@@ -421,18 +421,18 @@ const UserProfile = () => {
                       name="language"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("语言")}</FormLabel>
+                          <FormLabel>{t("common.language")}</FormLabel>
                           <Select
                             value={field.value}
                             onValueChange={field.onChange}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder={t("选择语言")} />
+                                <SelectValue placeholder={t("common.selectLanguage")} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="zh">{t("简体中文")}</SelectItem>
+                              <SelectItem value="zh">{t("common.simplifiedChinese")}</SelectItem>
                               <SelectItem value="en">{t("English")}</SelectItem>
                             </SelectContent>
                           </Select>
@@ -447,8 +447,8 @@ const UserProfile = () => {
                       disabled={updateProfileMutation.isPending}
                     >
                       {updateProfileMutation.isPending
-                        ? t("加载中...")
-                        : t("更新个人资料")}
+                        ? t("common.processing")
+                        : t("user.updateProfile")}
                     </Button>
                   </form>
                 </Form>
@@ -695,8 +695,8 @@ const UserProfile = () => {
                         disabled={changePasswordMutation.isPending}
                       >
                         {changePasswordMutation.isPending
-                          ? t("加载中...")
-                          : t("修改密码")}
+                          ? t("common.processing")
+                          : t("user.changePassword")}
                       </Button>
                     </form>
                   </Form>
@@ -705,7 +705,7 @@ const UserProfile = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>{t("语言")}</CardTitle>
+                  <CardTitle>{t("common.language")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-4">
@@ -717,7 +717,7 @@ const UserProfile = () => {
                       disabled={updateProfileMutation.isPending}
                     >
                       {user.language === "zh" && <Check className="mr-2 h-4 w-4" />}
-                      {t("简体中文")}
+                      {t("common.simplifiedChinese")}
                     </Button>
                     <Button
                       variant={user.language === "en" ? "default" : "outline"}
@@ -735,23 +735,23 @@ const UserProfile = () => {
 
               <Card className="bg-red-50 border-red-100">
                 <CardHeader>
-                  <CardTitle className="text-red-600">{t("危险区域")}</CardTitle>
+                  <CardTitle className="text-red-600">{t("user.dangerZone")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-neutral-600 mb-4">
-                    {t("删除您的账户将无法恢复，请谨慎操作。")}
+                    {t("user.deleteAccountWarning")}
                   </p>
                   <Button
                     variant="destructive"
                     onClick={() => {
                       // This would show a confirmation dialog in a real implementation
                       toast({
-                        title: t("删除账户不可用"),
-                        description: t("请联系支持团队"),
+                        title: t("user.deleteAccountUnavailable"),
+                        description: t("user.contactSupport"),
                       });
                     }}
                   >
-                    {t("删除账户")}
+                    {t("user.deleteAccount")}
                   </Button>
                 </CardContent>
               </Card>

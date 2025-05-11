@@ -23,7 +23,10 @@
     "confirm": "Confirm",
     "processing": "Processing...",
     "tryAgainLater": "Please try again later",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "language": "Language",
+    "simplifiedChinese": "Simplified Chinese",
+    "selectLanguage": "Select Language"
   },
   "nav": {
     "home": "Home",
@@ -78,6 +81,9 @@
     "personalInfo": "Personal Information",
     "updateProfile": "Update Profile",
     "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
     "orderHistory": "Order History",
     "savedProducts": "Saved Products",
     "noOrders": "You don't have any orders yet",
@@ -93,7 +99,12 @@
     "favoriteRemoved": "Removed from favorites",
     "favoriteAddFailed": "Failed to add to favorites",
     "favoriteRemoveFailed": "Failed to remove from favorites",
-    "backToProfile": "Back to Profile"
+    "backToProfile": "Back to Profile",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteAccountWarning": "Deleting your account cannot be undone. Please be certain.",
+    "deleteAccountUnavailable": "Account deletion unavailable",
+    "contactSupport": "Please contact support team"
   },
   "vendor": {
     "dashboard": "Vendor Dashboard",
