@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CheckboxGroup, CheckboxItem, Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { useLocation, useSearch } from "wouter";
+import { useLocation } from "wouter";
 import { useState, useEffect, useMemo } from "react";
 import { X, Facebook, Twitter, Instagram, Youtube, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -14,17 +14,9 @@ import { getImageUrl } from "@/utils/getImageUrl";
 const HomePage = () => {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
-  const search = useSearch();
-  const searchParams = new URLSearchParams(search);
   const [email, setEmail] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
-  
-  // 当URL参数变化时更新搜索关键词
-  useEffect(() => {
-    const params = new URLSearchParams(search);
-    setSearchQuery(params.get("search") || "");
-  }, [search]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,23 +41,20 @@ const HomePage = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
-  // 根据搜索关键词和过滤器筛选商品
+  // 根据搜索关键字和过滤器筛选商品
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
     
     return products.filter((product: any) => {
-      // 搜索关键词筛选
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase().trim();
-        const titleMatch = product.title?.toLowerCase().includes(query) || false;
-        const descMatch = product.description?.toLowerCase().includes(query) || false;
-        const categoryMatch = product.category?.toLowerCase().includes(query) || false;
-        const tagMatch = product.tags && Array.isArray(product.tags) && 
-          product.tags.some((tag: string) => tag.toLowerCase().includes(query));
-        
-        if (!(titleMatch || descMatch || categoryMatch || tagMatch)) {
-          return false;
-        }
+      // 搜索关键字筛选（标题、描述、类别）
+      const searchLower = searchQuery.toLowerCase().trim();
+      if (searchLower && (
+        !product.title?.toLowerCase().includes(searchLower) && 
+        !product.description?.toLowerCase().includes(searchLower) && 
+        !product.category?.toLowerCase().includes(searchLower) &&
+        !(product.tags && product.tags.some((tag: string) => tag.toLowerCase().includes(searchLower)))
+      )) {
+        return false;
       }
       
       // 应用活跃过滤器
@@ -88,7 +77,11 @@ const HomePage = () => {
     });
   }, [products, searchQuery, activeFilters]);
   
-
+  // 处理搜索表单提交
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // 搜索逻辑已在 filteredProducts 中实现
+  };
 
   // 获取真实分类数据
   const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery({
@@ -136,6 +129,29 @@ const HomePage = () => {
       {/* Content Section - Products with Filters */}
       <section className="py-10">
         <div className="container mx-auto px-4">
+          {/* 搜索栏 */}
+          <div className="mb-8">
+            <form onSubmit={handleSearch} className="relative max-w-xl mx-auto">
+              <Input
+                type="text"
+                placeholder={t("common.search")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-6 text-lg rounded-full shadow-md border-gray-200 focus:border-primary"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              {searchQuery && (
+                <button 
+                  type="button" 
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </form>
+          </div>
+          
           <div className="flex flex-col md:flex-row gap-8">
             {/* Filters Sidebar */}
             <div className="w-full md:w-64 shrink-0">
@@ -248,10 +264,6 @@ const HomePage = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {searchQuery && <div className="col-span-3 mb-6 p-4 bg-primary-50 rounded-lg">
-                    <h3 className="text-lg font-medium mb-2">"{searchQuery}" 的搜索结果</h3>
-                    <p className="text-sm text-gray-600">找到 {filteredProducts.length} 个匹配的商品</p>
-                  </div>}
                   {filteredProducts.length > 0 ? filteredProducts.map((product: any) => (
                     <Card key={product.id} className="border overflow-hidden hover:shadow-md transition-shadow cursor-pointer" onClick={() => setLocation(`/product/${product.id}`)}>
                       <div className="aspect-square bg-gray-100 flex items-center justify-center">
