@@ -8,7 +8,7 @@ import {
   orders, orderItems, payments, comments, userSavedListings, categories
 } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, inArray, like, gte, lte, sql, SQL } from "drizzle-orm";
+import { eq, and, inArray, like, gte, lte, sql, SQL, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { IStorage } from "./storage";
@@ -59,101 +59,27 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  // 获取所有供应商
-  async getAllVendors(): Promise<VendorProfile[]> {
-    return await db.select().from(vendorProfiles);
-  }
-
-  // 获取所有商品
-  async getAllListings(): Promise<Listing[]> {
-    try {
-      const result = await db.select().from(listings);
-
-      // 确保vendorId和categoryId是数字类型
-      return result.map(listing => {
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-
-        return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
-        };
-      });
-    } catch (error) {
-      console.error("Error in getAllListings:", error);
-      return [];
-    }
-  }
-
-  // 获取所有订单
-  async getAllOrders(): Promise<Order[]> {
-    try {
-      const result = await db.select().from(orders);
-
-      // 确保userId是数字类型
-      return result.map(order => {
-        // 处理userId
-        let processedUserId = order.userId;
-        if (typeof processedUserId === 'string') {
-          // 尝试转换为数字
-          const parsedUserId = parseInt(processedUserId);
-          // 如果转换结果是NaN，则使用null
-          processedUserId = isNaN(parsedUserId) ? null : parsedUserId;
-        }
-
-        return {
-          ...order,
-          userId: processedUserId
-        };
-      });
-    } catch (error) {
-      console.error("Error in getAllOrders:", error);
-      return [];
-    }
-  }
-
-  // 获取所有支付记录
-  async getAllPayments(): Promise<Payment[]> {
-    return await db.select().from(payments);
-  }
-
   //=======================
   // 供应商相关方法实现
   //=======================
   async getVendorProfile(id: number): Promise<VendorProfile | undefined> {
     try {
-      // 确保id是有效数字
       if (id === null || id === undefined || isNaN(id)) {
         console.warn("Invalid id passed to getVendorProfile:", id);
         return undefined;
       }
-
       const result = await db.select().from(vendorProfiles).where(eq(vendorProfiles.id, id));
-
-      if (result && result.length > 0) {
-        const vendor = result[0];
-        // 处理userId如果是字符串
-        if (typeof vendor.userId === 'string') {
-          const parsedUserId = parseInt(vendor.userId);
-          vendor.userId = isNaN(parsedUserId) ? null : parsedUserId;
-        }
-        return vendor;
+      if (result.length > 0) {
+        const vp = result[0];
+        return {
+          ...vp,
+          userId: vp.userId!,
+          companyName: vp.companyName!,
+          businessNumber: vp.businessNumber!,
+          verificationStatus: vp.verificationStatus!,
+          createdAt: vp.createdAt!,
+          updatedAt: vp.updatedAt!,
+        };
       }
       return undefined;
     } catch (error) {
@@ -164,22 +90,22 @@ export class DatabaseStorage implements IStorage {
 
   async getVendorProfileByUserId(userId: number): Promise<VendorProfile | undefined> {
     try {
-      // 确保userId是有效数字
       if (userId === null || userId === undefined || isNaN(userId)) {
         console.warn("Invalid userId passed to getVendorProfileByUserId:", userId);
         return undefined;
       }
-
       const result = await db.select().from(vendorProfiles).where(eq(vendorProfiles.userId, userId));
-
-      if (result && result.length > 0) {
-        const vendor = result[0];
-        // 处理userId如果是字符串
-        if (typeof vendor.userId === 'string') {
-          const parsedUserId = parseInt(vendor.userId);
-          vendor.userId = isNaN(parsedUserId) ? null : parsedUserId;
-        }
-        return vendor;
+      if (result.length > 0) {
+        const vp = result[0];
+        return {
+          ...vp,
+          userId: vp.userId!,
+          companyName: vp.companyName!,
+          businessNumber: vp.businessNumber!,
+          verificationStatus: vp.verificationStatus!,
+          createdAt: vp.createdAt!,
+          updatedAt: vp.updatedAt!,
+        };
       }
       return undefined;
     } catch (error) {
@@ -190,7 +116,16 @@ export class DatabaseStorage implements IStorage {
 
   async createVendorProfile(profileData: InsertVendorProfile): Promise<VendorProfile> {
     const result = await db.insert(vendorProfiles).values(profileData).returning();
-    return result[0];
+    const vp = result[0];
+    return {
+      ...vp,
+      userId: vp.userId!,
+      companyName: vp.companyName!,
+      businessNumber: vp.businessNumber!,
+      verificationStatus: vp.verificationStatus!,
+      createdAt: vp.createdAt!,
+      updatedAt: vp.updatedAt!,
+    };
   }
 
   async updateVendorProfile(id: number, profileData: Partial<VendorProfile>): Promise<VendorProfile | undefined> {
@@ -199,7 +134,19 @@ export class DatabaseStorage implements IStorage {
       .set({ ...profileData, updatedAt: new Date() })
       .where(eq(vendorProfiles.id, id))
       .returning();
-    return result[0];
+    if (result.length > 0) {
+      const vp = result[0];
+      return {
+        ...vp,
+        userId: vp.userId!,
+        companyName: vp.companyName!,
+        businessNumber: vp.businessNumber!,
+        verificationStatus: vp.verificationStatus!,
+        createdAt: vp.createdAt!,
+        updatedAt: vp.updatedAt!,
+      };
+    }
+    return undefined;
   }
 
   async getPendingVendors(): Promise<VendorProfile[]> {
@@ -208,22 +155,15 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(vendorProfiles)
         .where(eq(vendorProfiles.verificationStatus, VendorVerificationStatus.PENDING));
-
-      // 处理userId如果是字符串
-      return result.map(vendor => {
-        let processedUserId = vendor.userId;
-        if (typeof processedUserId === 'string') {
-          // 尝试转换为数字
-          const parsedUserId = parseInt(processedUserId);
-          // 如果转换结果是NaN，则使用null
-          processedUserId = isNaN(parsedUserId) ? null : parsedUserId;
-        }
-
-        return {
-          ...vendor,
-          userId: processedUserId
-        };
-      });
+      return result.map(vp => ({
+          ...vp,
+          userId: vp.userId!,
+          companyName: vp.companyName!,
+          businessNumber: vp.businessNumber!,
+          verificationStatus: vp.verificationStatus!,
+          createdAt: vp.createdAt!,
+          updatedAt: vp.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in getPendingVendors:", error);
       return [];
@@ -236,84 +176,175 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(vendorProfiles)
         .where(eq(vendorProfiles.verificationStatus, VendorVerificationStatus.APPROVED));
-
-      // 处理userId如果是字符串
-      return result.map(vendor => {
-        let processedUserId = vendor.userId;
-        if (typeof processedUserId === 'string') {
-          // 尝试转换为数字
-          const parsedUserId = parseInt(processedUserId);
-          // 如果转换结果是NaN，则使用null
-          processedUserId = isNaN(parsedUserId) ? null : parsedUserId;
-        }
-
-        return {
-          ...vendor,
-          userId: processedUserId
-        };
-      });
+      return result.map(vp => ({
+        ...vp,
+        userId: vp.userId!,
+        companyName: vp.companyName!,
+        businessNumber: vp.businessNumber!,
+        verificationStatus: vp.verificationStatus!,
+        createdAt: vp.createdAt!,
+        updatedAt: vp.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in getApprovedVendors:", error);
       return [];
     }
   }
 
-  //=======================
-  // 商品相关方法实现
-  //=======================
-  async getListing(id: number): Promise<Listing | undefined> {
+  // 获取所有供应商
+  async getAllVendors(): Promise<VendorProfile[]> {
     try {
-      // 确保id是有效数字
-      if (id === null || id === undefined || isNaN(id)) {
-        console.warn("Invalid id passed to getListing:", id);
-        return undefined;
-      }
+      const result = await db.select().from(vendorProfiles);
+      return result.map(vp => ({
+        ...vp,
+        userId: vp.userId!,
+        companyName: vp.companyName!,
+        businessNumber: vp.businessNumber!,
+        verificationStatus: vp.verificationStatus!,
+        createdAt: vp.createdAt!,
+        updatedAt: vp.updatedAt!,
+      }));
+    } catch (error) {
+      console.error("Error in getAllVendors:", error);
+      return [];
+    }
+  }
 
-      const result = await db.select().from(listings).where(eq(listings.id, id));
+  // 获取所有商品
+  async getAllListings(): Promise<Listing[]> {
+    try {
+      const result = await db.select().from(listings);
+      return result.map(listing => ({
+        ...listing,
+        vendorId: listing.vendorId!,
+        title: listing.title!,
+        description: listing.description!,
+        price: listing.price!,
+        type: listing.type!,
+        status: listing.status!,
+        images: listing.images!,
+        category: listing.category!,
+        tags: listing.tags!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
+      }));
+    } catch (error) {
+      console.error("Error in getAllListings:", error);
+      return [];
+    }
+  }
 
-      if (result && result.length > 0) {
-        const listing = result[0];
-
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-
+  async getOrderById(orderId: number): Promise<Order | undefined> {
+    try {
+      const result = await db.select().from(orders).where(eq(orders.id, orderId));
+      if (result.length > 0) {
+        const order = result[0];
         return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
+          ...order,
+          userId: order.userId!,
+          status: order.status!,
+          totalAmount: order.totalAmount!,
+          currency: order.currency!,
+          createdAt: order.createdAt!,
+          updatedAt: order.updatedAt!,
         };
       }
-
       return undefined;
     } catch (error) {
-      console.error(`Error in getListing with id ${id}:`, error);
+      console.error("Error fetching order by ID:", error);
+      throw error;
+    }
+  }
+  
+  // 实现IStorage的getOrder方法
+  async getOrder(id: number): Promise<Order | undefined> {
+    return this.getOrderById(id);
+  }
+
+  async getAllOrders(): Promise<Order[]> {
+    try {
+      const result = await db
+        .select()
+        .from(orders)
+        .orderBy(desc(orders.createdAt));
+      return result.map(order => ({
+        ...order,
+        userId: order.userId!,
+        status: order.status!,
+        totalAmount: order.totalAmount!,
+        currency: order.currency!,
+        createdAt: order.createdAt!,
+        updatedAt: order.updatedAt!,
+      }));
+    } catch (error) {
+      console.error('获取所有订单失败:', error);
+      return []; 
+    }
+  }
+  
+  // 获取所有支付记录
+  async getAllPayments(): Promise<Payment[]> {
+    try {
+      const result = await db.select().from(payments);
+      return result.map(p => ({
+        ...p,
+        orderId: p.orderId!,
+        amount: p.amount!,
+        currency: p.currency!,
+        status: p.status!,
+        paymentMethod: p.paymentMethod!,
+        createdAt: p.createdAt!,
+        updatedAt: p.updatedAt!,
+      }));
+    } catch (error) {
+      console.error('获取所有支付记录失败:', error);
+      return [];
+    }
+  }
+
+  async getListing(id: number): Promise<Listing | undefined> {
+    try {
+      const result = await db.select().from(listings).where(eq(listings.id, id));
+      if (result.length > 0) {
+        const listing = result[0];
+        return {
+          ...listing,
+          vendorId: listing.vendorId!,
+          title: listing.title!,
+          description: listing.description!,
+          price: listing.price!,
+          type: listing.type!,
+          status: listing.status!,
+          images: listing.images!,
+          category: listing.category!,
+          tags: listing.tags!,
+          createdAt: listing.createdAt!,
+          updatedAt: listing.updatedAt!,
+        };
+      }
+      return undefined;
+    } catch (error) {
+      console.error("Error in getListing:", error);
       return undefined;
     }
   }
 
-  // 获取供应商的商品
   async getListingsByVendorId(vendorId: number): Promise<Listing[]> {
     try {
       const result = await db.select().from(listings).where(eq(listings.vendorId, vendorId));
       return result.map(listing => ({
         ...listing,
-        images: listing.images as string[],
-        tags: listing.tags as string[]
+        vendorId: listing.vendorId!,
+        title: listing.title!,
+        description: listing.description!,
+        price: listing.price!,
+        type: listing.type!,
+        status: listing.status!,
+        images: listing.images!,
+        category: listing.category!,
+        tags: listing.tags!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
       }));
     } catch (error) {
       console.error("Error in getListingsByVendorId:", error);
@@ -329,33 +360,16 @@ export class DatabaseStorage implements IStorage {
         .where(eq(listings.status, ListingStatus.ACTIVE))
         .limit(limit)
         .offset(offset);
-
-      // 确保vendorId和categoryId是数字类型
-      return result.map(listing => {
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-
-        return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
-        };
-      });
+      return result.map(listing => ({
+        ...listing,
+        vendorId: listing.vendorId!,
+        title: listing.title!,
+        description: listing.description!,
+        price: listing.price!,
+        status: listing.status!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in getActiveListings:", error);
       return [];
@@ -364,77 +378,48 @@ export class DatabaseStorage implements IStorage {
 
   async getPendingListings(): Promise<Listing[]> {
     try {
-      const result = await db
-        .select()
-        .from(listings)
-        .where(eq(listings.status, ListingStatus.PENDING));
-
-      // 确保vendorId和categoryId是数字类型
-      return result.map(listing => {
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-
-        return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
-        };
-      });
+      const result = await db.select().from(listings).where(eq(listings.status, ListingStatus.PENDING));
+      return result.map(listing => ({
+        ...listing,
+        vendorId: listing.vendorId!,
+        title: listing.title!,
+        description: listing.description!,
+        price: listing.price!,
+        type: listing.type!,
+        status: listing.status!,
+        images: listing.images!,
+        category: listing.category!,
+        tags: listing.tags!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in getPendingListings:", error);
       return [];
     }
   }
 
-  async getFeaturedListings(limit: number = 4): Promise<Listing[]> {
+  async getFeaturedListings(limit: number = 5): Promise<Listing[]> {
     try {
       const result = await db
         .select()
         .from(listings)
         .where(eq(listings.status, ListingStatus.ACTIVE))
         .limit(limit);
-
-      // 确保vendorId和categoryId是数字类型
-      return result.map(listing => {
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-
-        return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
-        };
-      });
+      return result.map(listing => ({
+        ...listing,
+        vendorId: listing.vendorId!,
+        title: listing.title!,
+        description: listing.description!,
+        price: listing.price!,
+        type: listing.type!,
+        status: listing.status!,
+        images: listing.images!,
+        category: listing.category!,
+        tags: listing.tags!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in getFeaturedListings:", error);
       return [];
@@ -452,33 +437,20 @@ export class DatabaseStorage implements IStorage {
             eq(listings.category, category)
           )
         );
-
-      // 确保vendorId和categoryId是数字类型
-      return result.map(listing => {
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-
-        return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
-        };
-      });
+      return result.map(listing => ({
+        ...listing,
+        vendorId: listing.vendorId!,
+        title: listing.title!,
+        description: listing.description!,
+        price: listing.price!,
+        type: listing.type!,
+        status: listing.status!,
+        images: listing.images!,
+        category: listing.category!,
+        tags: listing.tags!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in getListingsByCategory:", error);
       return [];
@@ -493,11 +465,9 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(listings.status, ListingStatus.ACTIVE),
-            // 兼容商品表存 categoryId 或 category 字段
             (eq(listings.categoryId, categoryId) as any) // drizzle-orm 不支持 or，这里用 as any hack
           )
         );
-      // 补充：若 categoryId 为空，尝试用 categoryName 匹配
       if (result.length === 0) {
         const resultByName = await db
           .select()
@@ -508,9 +478,31 @@ export class DatabaseStorage implements IStorage {
               eq(listings.category, categoryName)
             )
           );
-        return resultByName;
+        return resultByName.map(listing => ({
+          ...listing,
+          vendorId: listing.vendorId!,
+          title: listing.title!,
+          description: listing.description!,
+          price: listing.price!,
+          type: listing.type!,
+          status: listing.status!,
+          images: listing.images!,
+          category: listing.category!,
+          tags: listing.tags!,
+          createdAt: listing.createdAt!,
+          updatedAt: listing.updatedAt!,
+        }));
       }
-      return result;
+      return result.map(listing => ({
+        ...listing,
+        vendorId: listing.vendorId!,
+        name: listing.name!,
+        description: listing.description!,
+        price: listing.price!,
+        status: listing.status!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in getListingsByCategoryNameOrId:", error);
       return [];
@@ -519,10 +511,8 @@ export class DatabaseStorage implements IStorage {
 
   async searchListings(query: string, filters?: any): Promise<Listing[]> {
     try {
-      // 构建WHERE条件
       const conditions: SQL[] = [eq(listings.status, ListingStatus.ACTIVE)];
 
-      // 搜索词匹配
       if (query) {
         const searchTerm = `%${query.toLowerCase()}%`;
         conditions.push(
@@ -533,14 +523,11 @@ export class DatabaseStorage implements IStorage {
         );
       }
 
-      // 应用额外过滤条件
       if (filters) {
-        // 分类过滤
         if (filters.category && filters.category !== 'all') {
           conditions.push(eq(listings.category, filters.category));
         }
 
-        // 价格范围过滤
         if (filters.minPrice !== undefined) {
           conditions.push(gte(listings.price, filters.minPrice));
         }
@@ -555,32 +542,16 @@ export class DatabaseStorage implements IStorage {
         .from(listings)
         .where(and(...conditions));
 
-      // 确保vendorId和categoryId是数字类型
-      return result.map(listing => {
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-
-        return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
-        };
-      });
+      return result.map(listing => ({
+        ...listing,
+        vendorId: listing.vendorId!,
+        name: listing.name!,
+        description: listing.description!,
+        price: listing.price!,
+        status: listing.status!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in searchListings:", error);
       return [];
@@ -611,12 +582,28 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async deleteOrder(id: number): Promise<boolean> {
+    try {
+      await db.delete(orderItems).where(eq(orderItems.orderId, id));
+      await db.delete(orders).where(eq(orders.id, id));
+      return true;
+    } catch (error) {
+      console.error('删除订单失败:', error);
+      return false;
+    }
+  }
+
   //=======================
   // 企业相关方法实现
   //=======================
   async getFirm(id: number): Promise<Firm | undefined> {
-    const result = await db.select().from(firms).where(eq(firms.id, id));
-    return result[0];
+    try {
+      const result = await db.select().from(firms).where(eq(firms.id, id));
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error("Error fetching firm by ID:", error);
+      return undefined;
+    }
   }
 
   async createFirm(firmData: InsertFirm): Promise<Firm> {
@@ -658,56 +645,66 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInstalledListingsByFirmId(firmId: number): Promise<InstalledListing[]> {
-    return await db
-      .select()
-      .from(installedListings)
-      .where(eq(installedListings.firmId, firmId));
+    try {
+      const result = await db.select().from(installedListings).where(eq(installedListings.firmId, firmId));
+      return result.map(item => item);
+    } catch (error) {
+      console.error("Error in getInstalledListingsByFirmId:", error);
+      return [];
+    }
   }
 
   //=======================
   // 订单相关方法
   //=======================
-  async getOrder(id: number): Promise<Order | undefined> {
-    const result = await db.select().from(orders).where(eq(orders.id, id));
-    return result[0];
-  }
+
 
   async getOrdersByUserId(userId: number): Promise<Order[]> {
-    return await db
-      .select()
-      .from(orders)
-      .where(eq(orders.userId, userId));
+    try {
+      const result = await db.select().from(orders).where(eq(orders.userId, userId));
+      return result.map(order => ({
+        ...order,
+        userId: order.userId!,
+        status: order.status!,
+        totalAmount: order.totalAmount!,
+        currency: order.currency!,
+        createdAt: order.createdAt!,
+        updatedAt: order.updatedAt!,
+      }));
+    } catch (error) {
+      console.error("Error in getOrdersByUserId:", error);
+      return [];
+    }
   }
 
   async getOrdersByVendorId(vendorId: number): Promise<Order[]> {
-    // 获取供应商的所有商品ID
-    const vendorListings = await this.getListingsByVendorId(vendorId);
-    const listingIds = vendorListings.map(listing => listing.id);
+    try {
+      const vendorListings = await db.select({ id: listings.id }).from(listings).where(eq(listings.vendorId, vendorId));
+      if (vendorListings.length === 0) {
+        return [];
+      }
+      const listingIds = vendorListings.map(l => l.id);
 
-    if (listingIds.length === 0) {
+      const items = await db.selectDistinct({ orderId: orderItems.orderId }).from(orderItems).where(inArray(orderItems.listingId, listingIds));
+      if (items.length === 0) {
+        return [];
+      }
+      const orderIds = items.map(item => item.orderId);
+
+      const result = await db.select().from(orders).where(inArray(orders.id, orderIds));
+      return result.map(order => ({
+        ...order,
+        userId: order.userId!,
+        status: order.status!,
+        totalAmount: order.totalAmount!,
+        currency: order.currency!,
+        createdAt: order.createdAt!,
+        updatedAt: order.updatedAt!,
+      }));
+    } catch (error) {
+      console.error("Error in getOrdersByVendorId:", error);
       return [];
     }
-
-    // 查找包含供应商商品的订单项
-    const ordersWithVendorItems = await db
-      .select({
-        orderId: orderItems.orderId
-      })
-      .from(orderItems)
-      .where(inArray(orderItems.listingId, listingIds))
-      .groupBy(orderItems.orderId);
-
-    const orderIds = ordersWithVendorItems.map(item => item.orderId);
-
-    if (orderIds.length === 0) {
-      return [];
-    }
-
-    // 获取订单详情
-    return await db
-      .select()
-      .from(orders)
-      .where(inArray(orders.id, orderIds));
   }
 
   async createOrder(orderData: InsertOrder): Promise<Order> {
@@ -743,13 +740,23 @@ export class DatabaseStorage implements IStorage {
   // 支付相关方法
   //=======================
   async getPayment(id: number): Promise<Payment | undefined> {
-    const result = await db.select().from(payments).where(eq(payments.id, id));
-    return result[0];
+    try {
+      const result = await db.select().from(payments).where(eq(payments.id, id));
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error("Error fetching payment by ID:", error);
+      return undefined;
+    }
   }
 
   async getPaymentByOrderId(orderId: number): Promise<Payment | undefined> {
-    const result = await db.select().from(payments).where(eq(payments.orderId, orderId));
-    return result[0];
+    try {
+      const result = await db.select().from(payments).where(eq(payments.orderId, orderId));
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error("Error fetching payment by order ID:", error);
+      return undefined;
+    }
   }
 
   async createPayment(paymentData: InsertPayment): Promise<Payment> {
@@ -779,24 +786,42 @@ export class DatabaseStorage implements IStorage {
   // 评论相关方法
   //=======================
   async getCommentsByListingId(listingId: number): Promise<Comment[]> {
-    return await db
-      .select()
-      .from(comments)
-      .where(eq(comments.listingId, listingId));
+    try {
+      const result = await db
+        .select()
+        .from(comments)
+        .where(eq(comments.listingId, listingId));
+      return result.map(comment => comment);
+    } catch (error) {
+      console.error("Error in getCommentsByListingId:", error);
+      return [];
+    }
   }
 
   async getCommentsByUserId(userId: number): Promise<Comment[]> {
-    return await db
-      .select()
-      .from(comments)
-      .where(eq(comments.userId, userId));
+    try {
+      const result = await db
+        .select()
+        .from(comments)
+        .where(eq(comments.userId, userId));
+      return result.map(comment => comment);
+    } catch (error) {
+      console.error("Error in getCommentsByUserId:", error);
+      return [];
+    }
   }
 
   async getPendingComments(): Promise<Comment[]> {
-    return await db
-      .select()
-      .from(comments)
-      .where(eq(comments.status, "PENDING"));
+    try {
+      const result = await db
+        .select()
+        .from(comments)
+        .where(eq(comments.status, "PENDING"));
+      return result.map(comment => comment);
+    } catch (error) {
+      console.error("Error in getPendingComments:", error);
+      return [];
+    }
   }
 
   async createComment(commentData: InsertComment): Promise<Comment> {
@@ -818,50 +843,24 @@ export class DatabaseStorage implements IStorage {
   //=======================
   async getUserSavedListings(userId: number): Promise<Listing[]> {
     try {
-      // 获取用户收藏的商品ID
-      const savedItems = await db
-        .select()
+      const saved = await db.select({ listingId: userSavedListings.listingId })
         .from(userSavedListings)
         .where(eq(userSavedListings.userId, userId));
-
-      const listingIds = savedItems.map(item => item.listingId);
-
-      if (listingIds.length === 0) {
+      if (saved.length === 0) {
         return [];
       }
-
-      // 获取商品详情
-      const result = await db
-        .select()
-        .from(listings)
-        .where(inArray(listings.id, listingIds));
-
-      // 确保vendorId和categoryId是数字类型
-      return result.map(listing => {
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-
-        return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
-        };
-      });
+      const listingIds = saved.map(s => s.listingId);
+      const result = await db.select().from(listings).where(inArray(listings.id, listingIds));
+      return result.map(listing => ({
+        ...listing,
+        vendorId: listing.vendorId!,
+        name: listing.name!,
+        description: listing.description!,
+        price: listing.price!,
+        status: listing.status!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in getUserSavedListings:", error);
       return [];
@@ -915,14 +914,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-
-
   async getCategory(id: number): Promise<Category | undefined> {
     try {
       const result = await db.select().from(categories).where(eq(categories.id, id));
-      return result[0];
+      return result.length > 0 ? result[0] : undefined;
     } catch (error) {
-      console.error("Error in getCategory:", error);
+      console.error("Error fetching category by ID:", error);
       return undefined;
     }
   }
@@ -930,9 +927,9 @@ export class DatabaseStorage implements IStorage {
   async getCategoryBySlug(slug: string): Promise<Category | undefined> {
     try {
       const result = await db.select().from(categories).where(eq(categories.slug, slug));
-      return result[0];
+      return result.length > 0 ? result[0] : undefined;
     } catch (error) {
-      console.error("Error in getCategoryBySlug:", error);
+      console.error("Error fetching category by slug:", error);
       return undefined;
     }
   }
@@ -963,16 +960,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteCategory(id: number): Promise<boolean> {
     try {
-      // 先检查是否有商品使用此分类
-      const listingsWithCategory = await db
-        .select()
-        .from(listings)
-        .where(eq(listings.categoryId, id));
-
-      if (listingsWithCategory.length > 0) {
-        throw new Error("无法删除分类，因为有商品正在使用此分类");
-      }
-
       await db.delete(categories).where(eq(categories.id, id));
       return true;
     } catch (error) {
@@ -992,33 +979,16 @@ export class DatabaseStorage implements IStorage {
             eq(listings.categoryId, categoryId)
           )
         );
-
-      // 确保vendorId和categoryId是数字类型
-      return result.map(listing => {
-        // 处理vendorId
-        let processedVendorId = listing.vendorId;
-        if (typeof processedVendorId === 'string') {
-          // 尝试转换为数字
-          const parsedVendorId = parseInt(processedVendorId);
-          // 如果转换结果是NaN，则使用null
-          processedVendorId = isNaN(parsedVendorId) ? null : parsedVendorId;
-        }
-
-        // 处理categoryId
-        let processedCategoryId = listing.categoryId;
-        if (processedCategoryId && typeof processedCategoryId === 'string') {
-          // 尝试转换为数字
-          const parsedCategoryId = parseInt(processedCategoryId);
-          // 如果转换结果是NaN，则使用null
-          processedCategoryId = isNaN(parsedCategoryId) ? null : parsedCategoryId;
-        }
-
-        return {
-          ...listing,
-          vendorId: processedVendorId,
-          categoryId: processedCategoryId
-        };
-      });
+      return result.map(listing => ({
+        ...listing,
+        vendorId: listing.vendorId!,
+        name: listing.name!,
+        description: listing.description!,
+        price: listing.price!,
+        status: listing.status!,
+        createdAt: listing.createdAt!,
+        updatedAt: listing.updatedAt!,
+      }));
     } catch (error) {
       console.error("Error in getListingsByCategoryId:", error);
       return [];
@@ -1027,10 +997,8 @@ export class DatabaseStorage implements IStorage {
 
   async getCategoryWithProductCount(): Promise<(Category & { productsCount: number })[]> {
     try {
-      // 先获取所有分类
       const allCategories = await this.getAllCategories();
 
-      // 为每个分类统计商品数量
       const categoriesWithCount = await Promise.all(
         allCategories.map(async (category) => {
           const products = await this.getListingsByCategoryId(category.id);
@@ -1049,14 +1017,11 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// 引入or函数
 function or(...conditions: SQL[]): SQL {
-  // 如果没有条件，返回true
   if (conditions.length === 0) {
     return sql`TRUE`;
   }
 
-  // 否则创建OR语句
   const conditionsStr = conditions.map(c => `(${c.toString()})`).join(' OR ');
   return sql`(${conditionsStr})`;
 }

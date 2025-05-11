@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply font-sans antialiased text-foreground bg-slate-50;
+    @apply font-sans antialiased text-foreground bg-blue-100;
   }
 
   .bg-gradient-page {

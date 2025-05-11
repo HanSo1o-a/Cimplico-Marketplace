@@ -1,15 +1,39 @@
 version: '3.8'
+
 services:
   db:
-    image: postgres:15
-    restart: always
-    environment:
-      POSTGRES_DB: workpaper_market
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+    image: postgres:15-alpine
     ports:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=workpaper_market
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/workpaper_market
+      - NODE_ENV=development
+      - PORT=5000
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+    restart: always
+
 volumes:
   pg_data:

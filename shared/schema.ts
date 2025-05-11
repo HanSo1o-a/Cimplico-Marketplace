@@ -308,6 +308,53 @@ export const insertUserSavedListingSchema = createInsertSchema(userSavedListings
   listingId: true
 });
 
+// 扩展用户登录模式
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6)
+});
+
+export type LoginCredentials = z.infer<typeof loginSchema>;
+
+// 注册用户模式
+export const registerSchema = insertUserSchema.pick({
+  email: true,
+  password: true,
+  firstName: true,
+  lastName: true,
+  language: true
+}).extend({
+  confirmPassword: z.string().min(6)
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "密码不匹配",
+  path: ["confirmPassword"],
+});
+
+export type RegisterCredentials = z.infer<typeof registerSchema>;
+
+// Zod schemas for validation
+export const insertUserSchemaValidation = createInsertSchema(users);
+export const selectUserSchemaValidation = createInsertSchema(users, {
+  id: z.number(),
+  email: z.string().email(),
+  firstName: z.string(),
+  lastName: z.string(),
+  role: z.enum([UserRole.USER, UserRole.VENDOR, UserRole.ADMIN]),
+  status: z.enum([UserStatus.ACTIVE, UserStatus.INACTIVE, UserStatus.SUSPENDED]),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export const selectVendorProfileSchema = createInsertSchema(vendorProfiles, {
+  id: z.number(),
+  userId: z.number(),
+  companyName: z.string(),
+  businessNumber: z.string(), 
+  verificationStatus: z.enum([VendorVerificationStatus.PENDING, VendorVerificationStatus.APPROVED, VendorVerificationStatus.REJECTED]),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
 // 创建类型定义
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
@@ -344,27 +391,3 @@ export type Comment = typeof comments.$inferSelect;
 
 export type InsertUserSavedListing = z.infer<typeof insertUserSavedListingSchema>;
 export type UserSavedListing = typeof userSavedListings.$inferSelect;
-
-// 扩展用户登录模式
-export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6)
-});
-
-export type LoginCredentials = z.infer<typeof loginSchema>;
-
-// 注册用户模式
-export const registerSchema = insertUserSchema.pick({
-  email: true,
-  password: true,
-  firstName: true,
-  lastName: true,
-  language: true
-}).extend({
-  confirmPassword: z.string().min(6)
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "密码不匹配",
-  path: ["confirmPassword"],
-});
-
-export type RegisterCredentials = z.infer<typeof registerSchema>;

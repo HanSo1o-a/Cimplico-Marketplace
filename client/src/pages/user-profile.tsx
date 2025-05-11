@@ -1,14 +1,33 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import ProductCard from "@/components/product/ProductCard";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
+import { Listing as BaseListing } from "@shared/schema";
+
+// 扩展Listing类型，添加isSaved属性
+interface Listing extends BaseListing {
+  isSaved?: boolean;
+  vendor?: {
+    id: number;
+    companyName: string;
+    verificationStatus: string;
+    user?: {
+      id: number;
+      firstName: string;
+      lastName: string;
+      avatar?: string;
+    };
+  };
+}
+
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { User, Listing, Order } from "@shared/schema";
+import { User, Order } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductGrid from "@/components/product/ProductGrid";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,12 +74,13 @@ import {
 const UserProfile = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [, navigate] = useLocation();
-  const search = useSearch();
-  const params = new URLSearchParams(search);
-  const tabParam = params.get("tab");
-
+  const [_, navigate] = useLocation();
+  const [, params] = useSearch();
   const { user, logoutMutation } = useAuth();
+  const queryClient = useQueryClient();
+  const search = new URLSearchParams(params);
+  const tabParam = search.get("tab");
+
   const [activeTab, setActiveTab] = useState<string>(tabParam || "profile");
 
   // Redirect if not logged in
@@ -77,7 +97,7 @@ const UserProfile = () => {
   };
 
   // Fetch user's favorites
-  const { data: favorites, isLoading: favoritesLoading } = useQuery<Listing[]>({
+  const { data: favorites, isLoading: favoritesLoading, refetch: refetchFavorites } = useQuery<Listing[]>({
     queryKey: ["/api/users/current/favorites"],
     queryFn: getQueryFn(),
     enabled: activeTab === "favorites" && !!user,
@@ -318,7 +338,7 @@ const UserProfile = () => {
                 className="w-full text-red-500 hover:text-red-700 border-red-200 hover:bg-red-50"
                 onClick={handleLogout}
               >
-                {t("退出登录")}
+                {t("Log Out")}
               </Button>
             </CardFooter>
           </Card>
@@ -330,9 +350,9 @@ const UserProfile = () => {
           {activeTab === "profile" && (
             <Card>
               <CardHeader>
-                <CardTitle>{t("个人信息")}</CardTitle>
+                <CardTitle>{t("personalInfo")}</CardTitle>
                 <CardDescription>
-                  {t("编辑您的个人信息")}
+                  {t("Edit your personal information")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -344,7 +364,7 @@ const UserProfile = () => {
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("名字")}</FormLabel>
+                            <FormLabel>{t("name")}</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
@@ -358,7 +378,7 @@ const UserProfile = () => {
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("姓氏")}</FormLabel>
+                            <FormLabel>{t("Late")}</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
@@ -373,7 +393,7 @@ const UserProfile = () => {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("电子邮件")}</FormLabel>
+                          <FormLabel>{t("E-mail")}</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -387,7 +407,7 @@ const UserProfile = () => {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("电话")}</FormLabel>
+                          <FormLabel>{t("Mbile")}</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -565,11 +585,44 @@ const UserProfile = () => {
                       </div>
                     ))}
                   </div>
-                ) : favorites && favorites.length > 0 ? (
-                  <ProductGrid
-                    products={favorites}
-                    columns={3}
-                  />
+                ) : favorites && favorites.filter(product => product.isSaved === true).length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {favorites.filter(product => product.isSaved === true).map(product => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        savedInitially={true} // 所有收藏列表中的商品都是已收藏的
+                        handleSaveInParent={true} // 由父组件处理API请求
+                        onSaveToggle={async (id, newIsSavedState) => {
+                          try {
+                            if (!newIsSavedState) { // 用户想要取消收藏
+                              await apiRequest("DELETE", `/api/users/current/favorites/${id}`);
+                            } else {
+                              // 用户想要添加收藏 (此场景下不太可能，因为商品已在收藏列表)
+                              // 但为了以防万一或将来 ProductCard 用途更广，可以保留
+                              await apiRequest("POST", "/api/users/current/favorites", { listingId: id });
+                            }
+
+                            // API调用成功后，重新获取最新的收藏列表。
+                            await refetchFavorites();
+
+                            toast({
+                              title: newIsSavedState ? t("已成功收藏") : t("已取消收藏"),
+                            });
+
+                          } catch (error) {
+                            toast({
+                              title: newIsSavedState ? t("收藏失败") : t("取消收藏失败"),
+                              description: error instanceof Error ? error.message : t("未知错误"),
+                              variant: "destructive",
+                            });
+                            // 如果API调用失败，也建议刷新一下列表，以确保UI与服务器状态一致
+                            await refetchFavorites();
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
                 ) : (
                   <div className="text-center py-12">
                     <Heart className="mx-auto h-12 w-12 text-neutral-300 mb-4" />

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试删除订单功能</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, button {
+            padding: 8px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>测试删除订单功能</h1>
+    
+    <div class="form-group">
+        <label for="vendorId">供应商 ID:</label>
+        <input type="number" id="vendorId" value="1">
+    </div>
+    
+    <div class="form-group">
+        <label for="orderId">订单 ID:</label>
+        <input type="number" id="orderId" value="1">
+    </div>
+    
+    <button onclick="testDeleteOrder()">测试删除订单</button>
+    
+    <div id="result">
+        <p>结果将显示在这里...</p>
+    </div>
+    
+    <script>
+        async function testDeleteOrder() {
+            const resultDiv = document.getElementById('result');
+            const vendorId = document.getElementById('vendorId').value;
+            const orderId = document.getElementById('orderId').value;
+            
+            resultDiv.innerHTML = '<p>正在发送请求...</p>';
+            
+            try {
+                const response = await fetch(`http://localhost:5000/api/vendors/${vendorId}/orders/${orderId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 如果需要认证，可以添加认证头
+                        // 'Authorization': 'Bearer YOUR_TOKEN'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p style="color: green;">订单删除成功!</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p style="color: red;">订单删除失败: ${data.message || '未知错误'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p style="color: red;">API 调用出错:</p>
+                    <pre>${error.toString()}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

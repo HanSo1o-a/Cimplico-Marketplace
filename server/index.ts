@@ -51,7 +51,7 @@ app.use((req, res, next) => {
     log("数据库连接失败，请检查环境变量和数据库配置");
     process.exit(1);
   }
-  
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -75,7 +75,7 @@ app.use((req, res, next) => {
   const port = 5000;
   server.listen({
     port,
-    host: "127.0.0.1"
+    host: "0.0.0.0"
   }, () => {
     log(`serving on port ${port}`);
   });

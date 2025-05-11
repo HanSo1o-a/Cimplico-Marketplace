@@ -5,6 +5,10 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
+import { fileURLToPath } from "url";
+
+// 定义 __dirname（在 ES 模块中替代 import.meta.dirname）
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const viteLogger = createLogger();
 
@@ -46,7 +50,7 @@ export async function setupVite(app: Express, server: Server) {
 
     try {
       const clientTemplate = path.resolve(
-        import.meta.dirname,
+        __dirname,
         "..",
         "client",
         "index.html",
@@ -68,9 +72,13 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  // 在开发模式下，使用client目录
+  const distPath = process.env.NODE_ENV === "development"
+    ? path.resolve(__dirname, "..", "client")
+    : path.resolve(__dirname, "..", "dist", "public");
 
-  if (!fs.existsSync(distPath)) {
+  // 在开发模式下，不检查构建目录
+  if (process.env.NODE_ENV !== "development" && !fs.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`,
     );
@@ -80,6 +88,10 @@ export function serveStatic(app: Express) {
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    const indexPath = process.env.NODE_ENV === "development"
+      ? path.resolve(distPath, "index.html")
+      : path.resolve(distPath, "index.html");
+
+    res.sendFile(indexPath);
   });
 }

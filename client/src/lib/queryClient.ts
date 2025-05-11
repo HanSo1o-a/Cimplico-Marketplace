@@ -33,7 +33,16 @@ export async function apiRequest(
     throw new Error(error.message || "API request failed");
   }
 
-  return response.json();
+  // 如果状态码是204 No Content，直接返回null而不尝试解析JSON
+  if (response.status === 204) {
+    return null;
+  }
+
+  // 对于其他成功的响应，解析JSON
+  return response.json().catch(error => {
+    console.error("Error parsing JSON response:", error);
+    return null;
+  });
 }
 
 type GetQueryFnOptions = {

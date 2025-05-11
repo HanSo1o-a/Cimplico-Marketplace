@@ -6,7 +6,23 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCartStore } from "@/store/useCartStore";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Listing, Comment as CommentType, CommentStatus } from "@shared/schema";
+import { Listing as BaseListing, Comment as CommentType, CommentStatus } from "@shared/schema";
+
+// 扩展Listing类型，添加isSaved属性
+interface Listing extends BaseListing {
+  isSaved?: boolean;
+  vendor?: {
+    id: number;
+    companyName: string;
+    verificationStatus: string;
+    user?: {
+      id: number;
+      firstName: string;
+      lastName: string;
+      avatar?: string;
+    };
+  };
+}
 import ProductGrid from "@/components/product/ProductGrid";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -67,6 +83,7 @@ const ReviewDialog = ({ listingId, onSuccess }: ReviewDialogProps) => {
     setIsSubmitting(true);
 
     try {
+      console.log(`Submitting review for listing ${listingId}`);
       await apiRequest("POST", `/api/listings/${listingId}/comments`, {
         content,
         rating
@@ -82,6 +99,7 @@ const ReviewDialog = ({ listingId, onSuccess }: ReviewDialogProps) => {
       setOpen(false);
       onSuccess();
     } catch (error) {
+      console.error("Error submitting review:", error);
       toast({
         title: t("product.reviewError"),
         description: error instanceof Error ? error.message : "Unknown error",
@@ -95,8 +113,8 @@ const ReviewDialog = ({ listingId, onSuccess }: ReviewDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="mt-4">
-          <Star className="mr-2 h-4 w-4" />
+        <Button className="mt-4 bg-blue-800 hover:bg-blue-900 text-black font-bold">
+          <Star className="mr-2 h-4 w-4 text-black" />
           {t("product.addReview")}
         </Button>
       </DialogTrigger>
@@ -130,7 +148,7 @@ const ReviewDialog = ({ listingId, onSuccess }: ReviewDialogProps) => {
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={t("product.reviewPlaceholder")}
+              placeholder={t("product.reviewPlaceholder") || "请分享您对这个产品的看法..."}
               rows={4}
             />
           </div>
@@ -139,7 +157,11 @@ const ReviewDialog = ({ listingId, onSuccess }: ReviewDialogProps) => {
           <DialogClose asChild>
             <Button variant="outline">{t("common.cancel")}</Button>
           </DialogClose>
-          <Button onClick={submitReview} disabled={isSubmitting}>
+          <Button 
+            onClick={submitReview} 
+            disabled={isSubmitting}
+            className="bg-blue-800 hover:bg-blue-900 text-black font-bold"
+          >
             {isSubmitting ? t("common.loading") : t("common.submit")}
           </Button>
         </DialogFooter>
@@ -162,6 +184,7 @@ const ProductDetail = () => {
   const { data: product, isLoading, refetch } = useQuery<Listing>({
     queryKey: [`/api/listings/${id}`],
     queryFn: getQueryFn(),
+    // @ts-ignore - onError is valid but TypeScript doesn't recognize it
     onError: () => {
       navigate("/marketplace");
       toast({
@@ -171,6 +194,9 @@ const ProductDetail = () => {
       });
     }
   });
+  
+  // 确保product有值
+  const productData = product as Listing;
 
   // Fetch similar products
   const { data: similarProducts } = useQuery<Listing[]>({
@@ -197,32 +223,59 @@ const ProductDetail = () => {
       
       toast({
         title: t("product.addedToCart"),
-        description: product.title,
+        description: productData.title,
       });
     }
   };
 
   // Save/unsave product
   const toggleSave = async () => {
-    if (!product) return;
-    if (!user) {
+    if (!user || !productData) {
       navigate("/auth");
       return;
     }
-
+    
     setIsSaving(true);
 
     try {
-      if (product.isSaved) {
-        await apiRequest("DELETE", `/api/users/current/favorites/${product.id}`);
+      if (productData.isSaved) {
+        // 尝试取消收藏
+        const response = await apiRequest("DELETE", `/api/users/current/favorites/${productData.id}`);
+        
+        // 成功取消收藏
         toast({
           title: t("product.removedFromFavorites"),
         });
+        
+        // 更新本地状态
+        productData.isSaved = false;
       } else {
-        await apiRequest("POST", "/api/users/current/favorites", { listingId: product.id });
-        toast({
-          title: t("product.savedToFavorites"),
-        });
+        try {
+          // 尝试添加收藏
+          const response = await apiRequest("POST", "/api/users/current/favorites", { listingId: productData.id });
+          
+          // 成功添加收藏
+          toast({
+            title: t("product.savedToFavorites"),
+          });
+          
+          // 更新本地状态
+          productData.isSaved = true;
+        } catch (error: any) {
+          // 如果是已经收藏过的错误，我们认为收藏是成功的
+          if (error.response && error.response.status === 400 && 
+              error.response.data && error.response.data.message === "已经收藏过该商品") {
+            toast({
+              title: t("product.savedToFavorites"),
+            });
+            
+            // 更新本地状态
+            productData.isSaved = true;
+          } else {
+            // 其他错误，重新抛出以便在外层catch处理
+            throw error;
+          }
+        }
       }
       
       // Refresh product data to update isSaved status
@@ -230,11 +283,12 @@ const ProductDetail = () => {
       
       // Invalidate favorites cache
       queryClient.invalidateQueries({ queryKey: ["/api/users/current/favorites"] });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("收藏操作失败:", error);
       toast({
         title: "Error",
-        description: "Failed to update favorites",
-        variant: "destructive",
+        description: error.response?.data?.message || "Failed to update favorites",
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);
@@ -294,8 +348,10 @@ const ProductDetail = () => {
   const images = product.images as string[];
   const activeImage = images && images.length > 0 ? images[activeImageIndex] : null;
   const tags = product.tags as string[];
-  const comments = product.comments || [];
-  const approvedComments = comments.filter(comment => comment.status === CommentStatus.APPROVED);
+  // 确保comments是数组
+  const comments = Array.isArray((product as any).comments) ? (product as any).comments : [];
+  // 过滤已批准的评论
+  const approvedComments = comments.filter(comment => comment && comment.status === CommentStatus.APPROVED) as CommentType[];
 
   // Calculate average rating
   const averageRating = approvedComments.length 
@@ -463,9 +519,9 @@ const ProductDetail = () => {
                   size="lg"
                   variant="primary" 
                   onClick={handleAddToCart}
-                  className="bg-primary-600 hover:bg-primary-800 text-white font-bold py-3 px-8 shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-primary-400"
+                  className="bg-blue-800 hover:bg-blue-900 text-black font-bold py-3 px-8 shadow-lg transform hover:scale-105 transition-all duration-200 border-2 border-blue-700"
                 >
-                  <ShoppingCart className="h-6 w-6 mr-2" />
+                  <ShoppingCart className="h-6 w-6 mr-2 text-black" />
                   {t("common.addToCart")}
                 </Button>
               )}
@@ -564,17 +620,17 @@ const ProductDetail = () => {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center">
                           <Avatar className="h-10 w-10 mr-3">
-                            <AvatarImage src={comment.user?.avatar || undefined} />
+                            <AvatarImage src={(comment as any).user?.avatar || undefined} />
                             <AvatarFallback className="bg-primary-100 text-primary-700">
-                              {comment.user?.firstName?.[0]}{comment.user?.lastName?.[0]}
+                              {(comment as any).user?.firstName?.[0]}{(comment as any).user?.lastName?.[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <div className="font-medium">
-                              {comment.user?.firstName} {comment.user?.lastName}
+                              {(comment as any).user?.firstName} {(comment as any).user?.lastName}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {new Date(comment.createdAt).toLocaleDateString()}
+                              {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString() : '-'}
                             </div>
                           </div>
                         </div>

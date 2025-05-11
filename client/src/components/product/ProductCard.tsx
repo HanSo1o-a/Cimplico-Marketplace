@@ -33,13 +33,15 @@ interface ProductCardProps {
   hideActions?: boolean;
   savedInitially?: boolean; // 添加初始收藏状态
   onSaveToggle?: (id: number, isSaved: boolean) => void; // 收藏状态变化回调
+  handleSaveInParent?: boolean; // 是否由父组件处理收藏/取消收藏的API请求
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ 
   product, 
   hideActions = false,
   savedInitially = false,
-  onSaveToggle
+  onSaveToggle,
+  handleSaveInParent = false
 }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -89,27 +91,41 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
     try {
       setIsLoading(true);
-      if (isSaved) {
-        // 从收藏中移除
-        await apiRequest("DELETE", `/api/users/current/favorites/${product.id}`);
-        toast({
-          title: t("favorites.removed"),
-          description: t("favorites.removedDescription"),
-        });
-      } else {
-        // 添加到收藏
-        await apiRequest("POST", "/api/users/current/favorites", { listingId: product.id });
-        toast({
-          title: t("favorites.added"),
-          description: t("favorites.addedDescription"),
-        });
-      }
-      const newSavedState = !isSaved;
-      setIsSaved(newSavedState);
       
-      // 调用父组件提供的回调函数
-      if (onSaveToggle) {
-        onSaveToggle(product.id, newSavedState);
+      // 如果父组件处理API请求，只更新UI状态并调用回调
+      if (handleSaveInParent) {
+        const newSavedState = !isSaved;
+        setIsSaved(newSavedState);
+        
+        // 调用父组件提供的回调函数
+        if (onSaveToggle) {
+          onSaveToggle(product.id, newSavedState);
+        }
+      } else {
+        // 由当前组件处理API请求
+        if (isSaved) {
+          // 从收藏中移除
+          await apiRequest("DELETE", `/api/users/current/favorites/${product.id}`);
+          toast({
+            title: t("favorites.removed"),
+            description: t("favorites.removedDescription"),
+          });
+        } else {
+          // 添加到收藏
+          await apiRequest("POST", "/api/users/current/favorites", { listingId: product.id });
+          toast({
+            title: t("favorites.added"),
+            description: t("favorites.addedDescription"),
+          });
+        }
+        
+        const newSavedState = !isSaved;
+        setIsSaved(newSavedState);
+        
+        // 调用父组件提供的回调函数
+        if (onSaveToggle) {
+          onSaveToggle(product.id, newSavedState);
+        }
       }
     } catch (error) {
       toast({

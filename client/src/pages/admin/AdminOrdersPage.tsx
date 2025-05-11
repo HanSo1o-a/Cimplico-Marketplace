@@ -120,6 +120,7 @@ const AdminOrdersPage: React.FC = () => {
   // 状态管理
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [timeRange, setTimeRange] = useState<string>("all"); // 添加时间范围筛选
   const [selectedOrder, setSelectedOrder] = useState<ExtendedOrder | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -165,12 +166,46 @@ const AdminOrdersPage: React.FC = () => {
 
   // 获取所有订单
   const { data: orders = [], isLoading, error, refetch } = useQuery<ExtendedOrder[]>({
-    queryKey: ["admin-orders"],
+    queryKey: ["admin-orders", timeRange],
     queryFn: async () => {
       try {
-        // 使用真实API获取所有订单
-        const response = await apiRequest("GET", "/api/orders/all");
-        return response || [];
+        // 使用统计接口获取所有订单数据
+        const response = await apiRequest("GET", `/api/admin/statistics/orders?timeRange=${timeRange}`);
+        
+        // 将统计接口返回的数据格式转换为订单页面需要的格式
+        if (response && Array.isArray(response)) {
+          return response.map(order => ({
+            id: order.id,
+            userId: order.userId,
+            status: order.status,
+            totalAmount: order.totalAmount,
+            currency: "CNY", // 默认货币
+            createdAt: order.createdAt,
+            updatedAt: order.createdAt, // 统计接口可能没有updatedAt字段
+            paymentStatus: order.paymentStatus,
+            user: {
+              id: order.userId,
+              firstName: order.userName?.split(' ')[0] || '',
+              lastName: order.userName?.split(' ')[1] || '',
+              email: order.userEmail || ''
+            },
+            items: order.items?.map((item: any) => ({
+              id: item.id,
+              orderId: order.id,
+              listingId: item.listingId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              listing: {
+                id: item.listingId,
+                title: item.listingTitle || '',
+                vendorId: item.vendorId,
+                price: item.unitPrice,
+                images: []
+              }
+            })) || []
+          }));
+        }
+        return [];
       } catch (error) {
         console.error("获取订单失败:", error);
         toast({
@@ -479,7 +514,7 @@ const AdminOrdersPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="w-full md:w-1/3">
+            <div className="w-full md:w-1/4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
@@ -490,7 +525,7 @@ const AdminOrdersPage: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="w-full md:w-1/3">
+            <div className="w-full md:w-1/4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("admin.filterByStatus")} />
@@ -505,12 +540,27 @@ const AdminOrdersPage: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="w-full md:w-1/3 flex justify-end">
+            <div className="w-full md:w-1/4">
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("admin.filterByTimeRange")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("admin.timeRange.all")}</SelectItem>
+                  <SelectItem value="today">{t("admin.timeRange.today")}</SelectItem>
+                  <SelectItem value="week">{t("admin.timeRange.week")}</SelectItem>
+                  <SelectItem value="month">{t("admin.timeRange.month")}</SelectItem>
+                  <SelectItem value="year">{t("admin.timeRange.year")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-full md:w-1/4 flex justify-end">
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setSearchTerm("");
                   setStatusFilter("ALL");
+                  setTimeRange("all");
                 }}
               >
                 {t("admin.clearFilters")}

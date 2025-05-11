@@ -3,25 +3,16 @@ import react from "@vitejs/plugin-react";
 import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
-// 定义 __dirname（在 ES 模块中替代 import.meta.dirname）
+// 确保在生产环境中也能正确处理路径
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [
     react(),
-    // 启用 themePlugin 以处理主题变量
-    themePlugin(),
     runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-        ]
-      : []),
+    themePlugin(),
   ],
   resolve: {
     alias: {
@@ -36,15 +27,8 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    host: '0.0.0.0',
     proxy: {
       '/api': 'http://localhost:5000',
-    },
-    watch: {
-      usePolling: true,
-    },
-    hmr: {
-      clientPort: 5000,
     },
   },
 });

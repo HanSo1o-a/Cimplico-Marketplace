@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { hashPassword, comparePasswords } from "./auth";
 import { registerStatisticsRoutes } from "./routes-statistics";
+import { registerOrderRoutes } from "./routes-order";
 import {
   UserRole,
   UserStatus,
@@ -18,9 +19,11 @@ import {
   orderItems,
   listings,
   users,
-  userSavedListings
+  userSavedListings,
+  vendorProfiles, // Ensure vendorProfiles is imported
+  insertVendorProfileSchema // Ensure insertVendorProfileSchema is imported
 } from "@shared/schema";
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { db } from "./db";
 import { eq, and, desc, asc, or, inArray } from "drizzle-orm";
 import { i18nMiddleware, t } from "./i18n";
@@ -34,21 +37,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 设置认证
   setupAuth(app);
   
+  // 注册订单相关路由
+  registerOrderRoutes(app);
+  
   // 注册统计相关路由
   registerStatisticsRoutes(app);
 
-  // 检查用户权限的中间件
-  const checkRole = (role: UserRole) => (req, res, next) => {
+  // Middleware to check if user is authenticated
+  const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: t('error.unauthorized', req.language) });
     }
-
-    if (req.user.role !== role && req.user.role !== UserRole.ADMIN) {
-      return res.status(403).json({ message: "权限不足" });
-    }
-
     next();
   };
+
+  // 检查用户权限的中间件
+  const checkRole = (role: UserRole) => (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: t('error.unauthorized', req.language) });
+    }
+    // Add type assertion for req.user within checkRole if needed, or ensure passport types are extended globally
+    const user = req.user as { role: UserRole } | undefined;
+    if (!user || (user.role !== role && user.role !== UserRole.ADMIN)) {
+      return res.status(403).json({ message: t('error.forbidden', req.language) });
+    }
+    next();
+  };
+
+  // --- Vendor Profile Routes ---
+
+  // Create a new vendor profile
+  app.post("/api/vendor-profiles", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+
+      // Check if a vendor profile already exists for this user
+      const existingProfile = await db
+        .select()
+        .from(vendorProfiles)
+        .where(eq(vendorProfiles.userId, userId))
+        .limit(1);
+
+      if (existingProfile.length > 0) {
+        return res.status(409).json({ message: t('error.vendorProfileExists', req.language) });
+      }
+
+      // Validate request body
+      const validationResult = insertVendorProfileSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ message: t('error.validationFailed', req.language), errors: validationResult.error.flatten() });
+      }
+
+      const { companyName, businessNumber, website, description } = validationResult.data;
+
+      // Create new vendor profile
+      const newProfile = await db
+        .insert(vendorProfiles)
+        .values({
+          userId,
+          companyName,
+          businessNumber,
+          website: website || null, // Ensure optional fields are handled
+          description: description || null,
+          verificationStatus: VendorVerificationStatus.PENDING, // Default status
+          // createdAt and updatedAt have defaultNow()
+        })
+        .returning();
+        
+      // Optionally, update user role to VENDOR if not already
+      if (req.user!.role !== UserRole.VENDOR) {
+        await db.update(users).set({ role: UserRole.VENDOR }).where(eq(users.id, userId));
+      }
+
+      res.status(201).json(newProfile[0]);
+    } catch (error) {
+      console.error("Failed to create vendor profile:", error);
+      res.status(500).json({ message: t('error.serverError', req.language), error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  // Update an existing vendor profile
+  app.patch("/api/vendor-profiles/:id", isAuthenticated, async (req, res) => {
+    try {
+      const profileId = parseInt(req.params.id);
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+
+      // Fetch the vendor profile to check ownership
+      const profileToUpdate = await db
+        .select()
+        .from(vendorProfiles)
+        .where(eq(vendorProfiles.id, profileId))
+        .limit(1);
+
+      if (profileToUpdate.length === 0) {
+        return res.status(404).json({ message: t('error.vendorProfileNotFound', req.language) });
+      }
+
+      // Authorization: User must be owner or admin
+      if (userRole !== UserRole.ADMIN && profileToUpdate[0].userId !== userId) {
+        return res.status(403).json({ message: t('error.forbidden', req.language) });
+      }
+
+      // Validate request body (allow partial updates)
+      const validationResult = insertVendorProfileSchema.partial().safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ message: t('error.validationFailed', req.language), errors: validationResult.error.flatten() });
+      }
+
+      const dataToUpdate = validationResult.data;
+      if (Object.keys(dataToUpdate).length === 0) {
+        return res.status(400).json({ message: t('error.noDataToUpdate', req.language) });
+      }
+      
+      // Add updatedAt timestamp
+      (dataToUpdate as any).updatedAt = new Date();
+
+      const updatedProfile = await db
+        .update(vendorProfiles)
+        .set(dataToUpdate)
+        .where(eq(vendorProfiles.id, profileId))
+        .returning();
+
+      res.status(200).json(updatedProfile[0]);
+    } catch (error) {
+      console.error("Failed to update vendor profile:", error);
+      res.status(500).json({ message: t('error.serverError', req.language), error: error instanceof Error ? error.message : String(error) });
+    }
+  });
 
   // 获取当前用户的订单
   app.get("/api/users/current/orders", async (req, res) => {
@@ -67,7 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(userOrders);
     } catch (error: any) {
       console.error("获取用户订单失败:", error);
-      res.status(500).json({ message: "获取订单失败", error: error.message });
+      res.status(500).json({ message: "获取订单失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -93,13 +209,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const favorites = await db
         .select()
         .from(listings)
-        .where(inArray(listings.id, listingIds))
-        .where(eq(listings.status, ListingStatus.ACTIVE));
+        .where(
+          and(
+            inArray(listings.id, listingIds),
+            eq(listings.status, ListingStatus.ACTIVE)
+          )
+        );
       
-      res.json(favorites);
+      // 获取每个商品的供应商信息并添加isSaved属性
+      const listingsWithVendorInfo = await Promise.all(
+        favorites.map(async (listing) => {
+          const vendor = await storage.getVendorProfile(listing.vendorId);
+          const user = vendor ? await storage.getUser(vendor.userId) : null;
+          
+          return {
+            ...listing,
+            vendor: vendor ? {
+              id: vendor.id,
+              companyName: vendor.companyName,
+              verificationStatus: vendor.verificationStatus,
+              user: user ? {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatar: user.avatar
+              } : null
+            } : null,
+            isSaved: true // 收藏列表中的商品必然是已收藏的
+          };
+        })
+      );
+      
+      // 只返回真正收藏的商品
+      const savedListingsOnly = listingsWithVendorInfo.filter(item => item.isSaved === true);
+      
+      res.json(savedListingsOnly);
     } catch (error: any) {
       console.error("获取用户收藏失败:", error);
-      res.status(500).json({ message: "获取收藏失败", error: error.message });
+      res.status(500).json({ message: "获取收藏失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -109,36 +256,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取所有订单
       const allOrders = await db.select().from(orders).orderBy(desc(orders.createdAt));
       
-      // 获取所有订单项
-      const allOrderItems = await db.select().from(orderItems);
-      
-      // 获取所有商品
-      const allListings = await db.select().from(listings);
-      
-      // 构建包含订单项和商品信息的完整订单数据
-      const ordersWithItems = allOrders.map(order => {
-        // 找到当前订单的所有订单项
-        const items = allOrderItems
-          .filter(item => item.orderId === order.id)
-          .map(item => {
-            // 找到订单项对应的商品
-            const listing = allListings.find(l => l.id === item.listingId);
-            return {
-              ...item,
-              listing
-            };
-          });
+      // 为每个订单获取订单项和商品信息
+      const ordersWithItems = await Promise.all(allOrders.map(async (order) => {
+        const orderItemsData = await db
+          .select()
+          .from(orderItems)
+          .where(eq(orderItems.orderId, order.id));
+        
+        const items = await Promise.all(orderItemsData.map(async (item) => {
+          const product = await db
+            .select()
+            .from(listings)
+            .where(eq(listings.id, item.listingId))
+            .then(res => res[0]); // 获取单个商品
+          return {
+            ...item,
+            listing: product
+          };
+        }));
         
         return {
           ...order,
           items
         };
-      });
+      }));
       
       res.json(ordersWithItems);
     } catch (error) {
       console.error("获取所有订单失败:", error);
-      res.status(500).json({ message: "获取订单失败", error: error.message });
+      res.status(500).json({ message: "获取订单失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -162,9 +308,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(updatedOrder[0]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("发货订单失败:", error);
-      res.status(500).json({ message: "发货订单失败", error: error.message });
+      res.status(500).json({ message: "发货订单失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -188,9 +334,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(updatedOrder[0]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("完成订单失败:", error);
-      res.status(500).json({ message: "完成订单失败", error: error.message });
+      res.status(500).json({ message: "完成订单失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -219,9 +365,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(updatedOrder[0]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("取消订单失败:", error);
-      res.status(500).json({ message: "取消订单失败", error: error.message });
+      res.status(500).json({ message: "取消订单失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -233,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(allOrders);
     } catch (error: any) {
       console.error("获取所有订单失败:", error);
-      res.status(500).json({ message: "获取订单失败", error: error.message });
+      res.status(500).json({ message: "获取订单失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -288,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("获取订单详情失败:", error);
-      res.status(500).json({ message: "获取订单详情失败", error: error.message });
+      res.status(500).json({ message: "获取订单详情失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -311,7 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(userWithoutPassword);
     } catch (error: any) {
       console.error("获取用户详情失败:", error);
-      res.status(500).json({ message: "获取用户详情失败", error: error.message });
+      res.status(500).json({ message: "获取用户详情失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -330,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(userOrders);
     } catch (error: any) {
       console.error("获取用户订单失败:", error);
-      res.status(500).json({ message: "获取用户订单失败", error: error.message });
+      res.status(500).json({ message: "获取用户订单失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -359,7 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(favorites);
     } catch (error: any) {
       console.error("获取用户收藏失败:", error);
-      res.status(500).json({ message: "获取用户收藏失败", error: error.message });
+      res.status(500).json({ message: "获取用户收藏失败", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -385,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.status(201).json(vendorProfile);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -407,7 +553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedProfile = await storage.updateVendorProfile(vendorId, req.body);
       res.json(updatedProfile);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -441,7 +587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(vendorsWithUserInfo);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/admin/vendors/pending:", error);
       res.status(500).json({ message: error.message });
     }
@@ -476,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(vendorsWithUserInfo);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/vendors/all:", error);
       res.status(500).json({ message: error.message });
     }
@@ -511,7 +657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(vendorsWithUserInfo);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/vendors/pending:", error);
       res.status(500).json({ message: error.message });
     }
@@ -533,7 +679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(updatedProfile);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -554,7 +700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json(updatedProfile);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/vendors/:id/approve:", error);
       res.status(500).json({ message: error.message });
     }
@@ -577,7 +723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json(updatedProfile);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/vendors/:id/reject:", error);
       res.status(500).json({ message: error.message });
     }
@@ -609,7 +755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(vendorsWithDetails);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -638,7 +784,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } : null,
         listings: activeListings
       });
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -678,7 +824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return { ...listing, categorySlug: slug };
       });
       res.json(listingsWithSlug);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching listings:", error);
       res.status(500).json({ error: "Failed to fetch listings" });
     }
@@ -691,7 +837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orderBy: [desc(listings.createdAt)],
       });
       res.json(pendingListings);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching pending listings:", error);
       res.status(500).json({ error: "Failed to fetch pending listings" });
     }
@@ -734,7 +880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(listingsWithVendorInfo);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -794,7 +940,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         comments: commentsWithUserInfo,
         isSaved
       });
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -817,7 +963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "商品更新失败" });
       }
       res.json(updated);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in PATCH /api/listings/:id:", error);
       res.status(500).json({ message: error.message });
     }
@@ -850,7 +996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.status(201).json(listing);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -891,7 +1037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json(updatedListing);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -926,7 +1072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ message: "删除失败" });
       }
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -993,7 +1139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ...listing,
               vendor: vendor ? {
                 id: vendor.id,
-                companyName: vendor.companyName,
+                companyName: vendor.companyName || "未命名公司",
                 verificationStatus: vendor.verificationStatus,
                 user: user ? {
                   id: user.id,
@@ -1014,7 +1160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validListings = listingsWithVendorInfo.filter(item => item !== null);
 
       res.json(validListings);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1035,7 +1181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(updatedListing);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1051,7 +1197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(listings.id, parseInt(id)));
       res.json({ message: "Listing approved successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error approving listing:", error);
       res.status(500).json({ error: "Failed to approve listing" });
     }
@@ -1070,7 +1216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .where(eq(listings.id, parseInt(id)));
       res.json({ message: "Listing rejected successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error rejecting listing:", error);
       res.status(500).json({ error: "Failed to reject listing" });
     }
@@ -1284,13 +1430,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "已经收藏过该商品" });
       }
 
-      const savedListing = await storage.saveListingForUser({
+      // 保存收藏关系
+      await storage.saveListingForUser({
         userId: req.user.id,
         listingId: listing.id
       });
+      
+      // 获取商品的供应商信息
+      const vendor = await storage.getVendorProfile(listing.vendorId);
+      const user = vendor ? await storage.getUser(vendor.userId) : null;
+      
+      // 返回完整的商品信息，并设置isSaved为true
+      const responseData = {
+        ...listing,
+        vendor: vendor ? {
+          id: vendor.id,
+          companyName: vendor.companyName,
+          verificationStatus: vendor.verificationStatus,
+          user: user ? {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            avatar: user.avatar
+          } : null
+        } : null,
+        isSaved: true // 设置为已收藏
+      };
 
-      res.status(201).json(savedListing);
-    } catch (error) {
+      res.status(201).json(responseData);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 收藏商品 (别名路由，与前端路径匹配)
+  app.post("/api/users/current/favorites", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      const { listingId } = req.body;
+
+      // 检查商品是否存在
+      const listing = await storage.getListing(parseInt(listingId));
+      if (!listing) {
+        return res.status(404).json({ message: "商品不存在" });
+      }
+
+      // 检查是否已经收藏
+      const isAlreadySaved = await storage.isListingSavedByUser(req.user.id, listing.id);
+      if (isAlreadySaved) {
+        return res.status(400).json({ message: "已经收藏过该商品" });
+      }
+
+      // 保存收藏关系
+      await storage.saveListingForUser({
+        userId: req.user.id,
+        listingId: listing.id
+      });
+      
+      // 获取商品的供应商信息
+      const vendor = await storage.getVendorProfile(listing.vendorId);
+      const user = vendor ? await storage.getUser(vendor.userId) : null;
+      
+      // 返回完整的商品信息，并设置isSaved为true
+      const responseData = {
+        ...listing,
+        vendor: vendor ? {
+          id: vendor.id,
+          companyName: vendor.companyName,
+          verificationStatus: vendor.verificationStatus,
+          user: user ? {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            avatar: user.avatar
+          } : null
+        } : null,
+        isSaved: true // 设置为已收藏
+      };
+
+      res.status(201).json(responseData);
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1311,7 +1533,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(404).json({ message: "收藏不存在" });
       }
-    } catch (error) {
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  // 取消收藏商品 (别名路由，与前端路径匹配)
+  app.delete("/api/users/current/favorites/:listingId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      const listingId = parseInt(req.params.listingId);
+
+      const result = await storage.removeSavedListing(req.user.id, listingId);
+
+      if (result) {
+        res.status(204).end();
+      } else {
+        res.status(404).json({ message: "收藏不存在" });
+      }
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1374,7 +1617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 返回成功消息
       res.json({ message: "密码更新成功" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in POST /api/user/change-password:", error);
       res.status(500).json({ message: "修改密码失败" });
     }
@@ -1414,7 +1657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(listingsWithVendorInfo);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1453,7 +1696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.status(201).json(order);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1493,35 +1736,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取订单项
       const orderItems = await storage.getOrderItems(order.id);
 
-      // 获取订单项的商品详情
-      const orderItemsWithDetails = await Promise.all(
-        orderItems.map(async (item) => {
-          const listing = await storage.getListing(item.listingId);
-          return {
-            ...item,
-            listing: listing ? {
-              id: listing.id,
-              title: listing.title,
-              description: listing.description,
-              price: listing.price,
-              type: listing.type,
-              images: listing.images,
-              category: listing.category,
-              downloadUrl: listing.downloadUrl
-            } : null
-          };
-        })
-      );
-
+      // 获取订单项对应的商品
+      const listingIds = orderItems.map(item => item.listingId);
+      const listingsResult = listingIds.length > 0 ? 
+        await db.select().from(listings).where(inArray(listings.id, listingIds)) : 
+        [];
+      
+      // 将商品信息添加到订单项中
+      const itemsWithListings = orderItems.map(item => {
+        const listing = listingsResult.find(l => l.id === item.listingId);
+        return {
+          ...item,
+          listing
+        };
+      });
+      
       // 获取支付信息
       const payment = await storage.getPaymentByOrderId(order.id);
 
       res.json({
         ...order,
-        items: orderItemsWithDetails,
+        items: itemsWithListings,
         payment
       });
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1560,7 +1798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validOrderRecords = orderRecords.filter(record => record !== null);
       
       res.json(validOrderRecords);
-    } catch (error) {
+    } catch (error: any) {
       console.error("获取订单记录失败:", error);
       res.status(500).json({ message: "获取订单记录失败" });
     }
@@ -1587,7 +1825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(ordersWithPaymentStatus);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1611,7 +1849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listings = await storage.getListingsByVendorId(vendorId);
 
       res.json(listings);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching vendor listings:", error);
       res.status(500).json({ message: error.message });
     }
@@ -1654,13 +1892,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const listing = await storage.getListing(item.listingId);
               return {
                 ...item,
-                listing: listing ? {
-                  id: listing.id,
-                  title: listing.title,
-                  price: listing.price,
-                  type: listing.type,
-                  images: listing.images
-                } : null
+                listing
               };
             })
           );
@@ -1679,46 +1911,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(detailedOrders);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+    } catch (error: any) {
+      console.error("获取供应商订单失败:", error);
+      res.status(500).json({ message: t('error.serverError', req.language) });
     }
   });
 
-  // 更新订单状态 (供应商)
   app.patch("/api/vendors/:vendorId/orders/:orderId", checkRole(UserRole.VENDOR), async (req, res) => {
     try {
       const vendorId = parseInt(req.params.vendorId);
       const orderId = parseInt(req.params.orderId);
       const { status } = req.body;
 
-      const vendor = await storage.getVendorProfile(vendorId);
-
-      if (!vendor) {
-        return res.status(404).json({ message: "供应商不存在" });
-      }
-
-      // 确保只有供应商自己可以更新订单
-      if (vendor.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+      // 确保是当前供应商
+      const vendorProfile = await storage.getVendorProfileByUserId(req.user.id);
+      if (!vendorProfile || vendorProfile.id !== vendorId) {
         return res.status(403).json({ message: "权限不足" });
       }
 
-      // 确保订单包含供应商的商品
-      const vendorOrders = await storage.getOrdersByVendorId(vendorId);
-      const isVendorOrder = vendorOrders.some(order => order.id === orderId);
-
-      if (!isVendorOrder) {
-        return res.status(403).json({ message: "权限不足" });
-      }
-
-      const updatedOrder = await storage.updateOrderStatus(orderId, status);
-
-      if (!updatedOrder) {
+      // 获取订单
+      const order = await storage.getOrder(orderId);
+      if (!order) {
         return res.status(404).json({ message: "订单不存在" });
       }
 
+      // 检查订单是否包含该供应商的商品
+      const orderItems = await storage.getOrderItems(orderId);
+      const vendorListings = await storage.getListingsByVendorId(vendorId);
+      const vendorListingIds = vendorListings.map(listing => listing.id);
+      
+      const hasVendorItems = orderItems.some(item => 
+        vendorListingIds.includes(item.listingId)
+      );
+
+      if (!hasVendorItems) {
+        return res.status(403).json({ message: "权限不足" });
+      }
+
+      // 更新订单状态
+      const updatedOrder = await storage.updateOrderStatus(orderId, status as OrderStatus);
+
       res.json(updatedOrder);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // 删除订单
+  app.delete("/api/vendors/:vendorId/orders/:orderId", checkRole(UserRole.VENDOR), async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.vendorId);
+      const orderId = parseInt(req.params.orderId);
+
+      // 确保是当前供应商
+      const vendorProfile = await storage.getVendorProfileByUserId(req.user.id);
+      if (!vendorProfile || vendorProfile.id !== vendorId) {
+        return res.status(403).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      // 获取订单
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: t('error.orderNotFound', req.language) });
+      }
+
+      // 检查订单是否包含该供应商的商品
+      const orderItems = await storage.getOrderItems(orderId);
+      const vendorListings = await storage.getListingsByVendorId(vendorId);
+      const vendorListingIds = vendorListings.map(listing => listing.id);
+      
+      const hasVendorItems = orderItems.some(item => 
+        vendorListingIds.includes(item.listingId)
+      );
+
+      if (!hasVendorItems) {
+        return res.status(403).json({ message: t('error.unauthorized', req.language) });
+      }
+
+      // 删除订单
+      const success = await storage.deleteOrder(orderId);
+      if (success) {
+        res.json({ success: true, message: t('vendor.orderDeletedSuccess', req.language) });
+      } else {
+        res.status(500).json({ message: t('error.serverError', req.language) });
+      }
+    } catch (error: any) {
+      console.error("删除订单失败:", error);
+      res.status(500).json({ message: t('error.serverError', req.language) });
     }
   });
 
@@ -1772,7 +2051,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateOrderStatus(orderId, OrderStatus.PAID);
 
       res.status(201).json(payment);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1849,7 +2128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.status(201).json(comment);
-    } catch (error) {
+    } catch (error: any) {
       console.error("提交评论失败:", error);
       res.status(500).json({ message: t('error.internalError', req.language) });
     }
@@ -1885,7 +2164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(commentsWithDetails);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1903,7 +2182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(updatedComment);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1960,7 +2239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(vendorStats);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -1996,7 +2275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(userStats);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2034,7 +2313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.status(201).json(order);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2080,7 +2359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(ordersWithDetails);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2142,7 +2421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payment: updatedPayment,
         order: updatedOrder
       });
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2170,7 +2449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(payment);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2230,7 +2509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currency: "CNY"
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2258,7 +2537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(vendorsWithUserInfo);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2364,7 +2643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const users = await storage.getAllUsers();
       console.log(`成功获取${users.length}个用户`);
       res.json(users);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/admin/users:", error);
       res.status(500).json({ message: error.message || "获取用户列表失败" });
     }
@@ -2406,7 +2685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(updatedUser);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in PATCH /api/admin/users/:id:", error);
       res.status(500).json({ message: error.message || "更新用户信息失败" });
     }
@@ -2457,7 +2736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating user password:", updateError);
         throw new Error("Password update failed");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in PATCH /api/admin/users/:id/password:", error);
       res.status(500).json({ message: error.message || "修改密码失败" });
     }
@@ -2486,7 +2765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(vendorsWithUserInfo);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2518,7 +2797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(ordersWithDetails);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2536,7 +2815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(updatedOrder);
-    } catch (error) {
+    } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
@@ -2550,7 +2829,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const categories = await storage.getCategoryWithProductCount();
       res.json(categories);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/categories:", error);
       res.status(500).json({ message: error.message });
     }
@@ -2573,7 +2852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...category,
         productsCount: products.length
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/categories/:id:", error);
       res.status(500).json({ message: error.message });
     }
@@ -2596,7 +2875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...category,
         productsCount: products.length
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/categories/slug/:slug:", error);
       res.status(500).json({ message: error.message });
     }
@@ -2615,7 +2894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const newCategory = await storage.createCategory(categoryData);
       res.status(201).json(newCategory);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in POST /api/categories:", error);
       if (error.name === "ZodError") {
         return res.status(400).json({
@@ -2648,7 +2927,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(updatedCategory);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in PATCH /api/categories/:id:", error);
       res.status(500).json({ message: error.message });
     }
@@ -2669,7 +2948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await storage.deleteCategory(categoryId);
 
       res.json({ success: result });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in DELETE /api/categories/:id:", error);
       res.status(500).json({ message: error.message });
     }
@@ -2712,7 +2991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       res.json(listingsWithVendorInfo);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in /api/categories/:id/listings:", error);
       res.status(500).json({ message: error.message });
     }
@@ -2769,7 +3048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 返回更新后的用户资料（不包含密码）
       const { password, ...userWithoutPassword } = updatedUser[0];
       res.json(userWithoutPassword);
-    } catch (error) {
+    } catch (error: any) {
       console.error("更新用户资料失败:", error);
       res.status(500).json({ message: t('error.updateFailed', req.language) });
     }
@@ -2825,7 +3104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 如果商品之前被拒绝，更新后将状态改为待审核
       if (listing[0].status === ListingStatus.REJECTED) {
-        updateData.status = ListingStatus.PENDING;
+        updateData.status = ListingStatus.PENDING; // 待审核
         updateData.rejectionReason = null; // 清除拒绝原因
       }
       
@@ -2840,7 +3119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(updatedListing[0]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("更新商品失败:", error);
       res.status(500).json({ message: t('error.updateFailed', req.language) });
     }

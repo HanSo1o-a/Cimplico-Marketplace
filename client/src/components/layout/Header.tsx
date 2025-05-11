@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { 
-  Menu, 
-  Search, 
-  Heart, 
-  ShoppingCart, 
-  User, 
-  LogOut, 
-  FileText, 
-  ChevronDown, 
-  Settings, 
+import {
+  Menu,
+  Search,
+  Heart,
+  ShoppingCart,
+  User,
+  LogOut,
+  FileText,
+  ChevronDown,
+  Settings,
   ChevronRight
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -153,16 +153,16 @@ const Header = () => {
 
     return (
       <div className="flex space-x-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white"
           onClick={() => navigate("/auth")}
         >
           {t("auth.login")}
         </Button>
-        <Button 
-          size="sm" 
+        <Button
+          size="sm"
           className="bg-primary-500 hover:bg-primary-600 text-white"
           onClick={() => navigate("/auth?tab=register")}
         >
@@ -181,8 +181,8 @@ const Header = () => {
           <div className="hidden md:flex gap-4 text-neutral-300">
             {user && user.role === "ADMIN" && (
               <>
-                <a 
-                  href="/admin" 
+                <a
+                  href="/admin"
                   className="bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded-sm transition-colors flex items-center"
                 >
                   <Settings className="h-3 w-3 mr-1" />
@@ -226,8 +226,8 @@ const Header = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 h-5 w-5" />
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-primary-500 hover:bg-primary-600 text-white py-1 px-3 h-8"
                 >
                   {t("common.search")}
@@ -238,9 +238,9 @@ const Header = () => {
             {/* User Actions */}
             <div className="flex items-center space-x-4">
               {/* Mobile Menu Toggle */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="md:hidden text-neutral-600"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
@@ -266,7 +266,7 @@ const Header = () => {
                     )}
                   </Button>
                 </Link>
-                
+
                 {/* Login/Register or User Menu */}
                 {renderUserActions()}
               </div>
@@ -279,11 +279,17 @@ const Header = () => {
               <Input
                 type="text"
                 placeholder={t("common.search") + "..."}
-                className="w-full py-2 pl-10 pr-4 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full py-2 pl-10 pr-16 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 h-5 w-5" />
+              <Button
+                type="submit"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-primary-500 hover:bg-primary-600 text-white py-1 px-3 h-8"
+              >
+                {t("common.search")}
+              </Button>
             </form>
           </div>
 
@@ -429,7 +435,7 @@ const Header = () => {
                   </span>
                 </Link>
               </li>
-              
+
               {/* User actions for mobile */}
               <li className="border-t border-neutral-200 mt-2 pt-2">
                 <Link href="/profile?tab=favorites">
@@ -452,7 +458,7 @@ const Header = () => {
                   </span>
                 </Link>
               </li>
-              
+
               {user ? (
                 <>
                   <li className="border-t border-neutral-200 mt-2 pt-2">
@@ -484,7 +490,7 @@ const Header = () => {
                     </li>
                   )}
                   <li>
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-red-500 font-medium"
                     >
@@ -495,14 +501,14 @@ const Header = () => {
                 </>
               ) : (
                 <li className="border-t border-neutral-200 mt-2 pt-2 flex px-4 py-2 space-x-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white flex-1"
                     onClick={() => navigate("/auth")}
                   >
                     {t("auth.login")}
                   </Button>
-                  <Button 
+                  <Button
                     className="bg-primary-500 text-white flex-1"
                     onClick={() => navigate("/auth?tab=register")}
                   >

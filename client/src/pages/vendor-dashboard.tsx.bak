@@ -872,9 +872,10 @@ const VendorDashboard = () => {
                     )}
                   </CardContent>
                 </Card>
-              )
-            }
-          </div>
+              </div>
+            )}
+
+            </div>
           )}
 
           {/* 删除订单确认对话框 */}

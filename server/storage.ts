@@ -60,6 +60,7 @@ export interface IStorage {
   getOrdersByVendorId(vendorId: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: OrderStatus): Promise<Order | undefined>;
+  deleteOrder(id: number): Promise<boolean>;
   getAllOrders(): Promise<Order[]>;
 
   // 订单项相关方法
