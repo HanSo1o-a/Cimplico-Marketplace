@@ -148,7 +148,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     if (price === 0) {
       return t("product.free");
     }
-    return `¥${price.toFixed(2)}`;
+    return `$${price.toFixed(2)}`;
   };
 
   // 添加到购物车

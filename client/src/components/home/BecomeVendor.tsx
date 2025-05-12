@@ -86,7 +86,7 @@ const BecomeVendor: React.FC = () => {
                   <div className="p-4 bg-muted rounded-md">
                     <div className="flex justify-between mb-1">
                       <span className="text-sm font-medium">本月销售额</span>
-                      <span className="text-sm font-semibold">¥12,850</span>
+                      <span className="text-sm font-semibold">$12,850</span>
                     </div>
                     <div className="h-2 bg-muted-foreground/20 rounded-full overflow-hidden">
                       <div className="h-full bg-primary" style={{ width: "70%" }}></div>

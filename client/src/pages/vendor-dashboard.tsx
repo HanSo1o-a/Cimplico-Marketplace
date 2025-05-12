@@ -404,7 +404,7 @@ const VendorDashboard = () => {
                   <CardHeader className="pb-2">
                     <CardDescription>{t("vendor.totalRevenue")}</CardDescription>
                     <CardTitle className="text-3xl">
-                      ¥{orders?.reduce((sum, order) => {
+                      ${orders?.reduce((sum, order) => {
                         // Calculate the total for items belonging to this vendor
                         const vendorItems = (order.items || []).filter(item => 
                           products?.some(p => p.id === item.listingId)
@@ -584,8 +584,8 @@ const VendorDashboard = () => {
                                   {product.price === 0 
                                     ? t("product.free") 
                                     : product.price 
-                                      ? `¥${product.price.toFixed(2)}` 
-                                      : `¥0.00`}
+                                      ? `$${product.price.toFixed(2)}` 
+                                      : `$0.00`}
                                 </TableCell>
                                 <TableCell>
                                   <span 
@@ -774,7 +774,7 @@ const VendorDashboard = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  ¥{orderTotal.toFixed(2)}
+                                  ${orderTotal.toFixed(2)}
                                 </TableCell>
                                 <TableCell>
                                   <span 

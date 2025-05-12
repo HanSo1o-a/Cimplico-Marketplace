@@ -351,7 +351,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
                   <FormLabel>{t("product.price")}</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2">¥</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
                       <Input
                         type="number"
                         min={0}

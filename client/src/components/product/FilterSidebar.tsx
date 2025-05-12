@@ -85,7 +85,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   // 价格范围格式化
   const formatPriceLabel = (value: number) => {
-    return value === 0 ? t("product.free") : `¥${value}`;
+    return value === 0 ? t("product.free") : `$${value}`;
   };
 
   // 内容分类列表

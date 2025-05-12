@@ -107,7 +107,7 @@ const HomePage = () => {
                 className="bg-primary hover:bg-primary/90"
                 onClick={() => setLocation("/marketplace")}
               >
-                {t("home.hero.browseButton")}
+                {t("Search here")}
               </Button>
               <Button 
                 variant="outline"

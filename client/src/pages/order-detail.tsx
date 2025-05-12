@@ -149,7 +149,7 @@ const OrderDetail = () => {
             <CardTitle className="text-sm font-medium">{t("order.total")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-bold">¥{order.totalAmount.toFixed(2)}</p>
+            <p className="text-xl font-bold">${order.totalAmount.toFixed(2)}</p>
           </CardContent>
         </Card>
       </div>
@@ -174,7 +174,7 @@ const OrderDetail = () => {
                 <div className="flex-grow">
                   <div className="flex justify-between">
                     <h3 className="font-medium">{item.listing?.title}</h3>
-                    <p className="font-medium">¥{item.unitPrice?.toFixed(2) || '0.00'}</p>
+                    <p className="font-medium">${item.unitPrice?.toFixed(2) || '0.00'}</p>
                   </div>
                   <div className="flex justify-between text-sm text-neutral-500 mt-1">
                     <p>{t("cart.quantity")}: {item.quantity}</p>
@@ -202,14 +202,14 @@ const OrderDetail = () => {
           <div className="pt-4">
             <div className="flex justify-between py-2">
               <span>{t("order.subtotal")}</span>
-              <span>¥{order.totalAmount.toFixed(2)}</span>
+              <span>${order.totalAmount.toFixed(2)}</span>
             </div>
 
             <Separator className="my-2" />
 
             <div className="flex justify-between py-2 font-bold">
               <span>{t("order.total")}</span>
-              <span>¥{order.totalAmount.toFixed(2)}</span>
+              <span>${order.totalAmount.toFixed(2)}</span>
             </div>
           </div>
         </CardContent>

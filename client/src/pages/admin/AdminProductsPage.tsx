@@ -183,7 +183,7 @@ const AdminProductsPage: React.FC = () => {
                             {renderStatusBadge(product.status)}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
-                            <span><DollarSign className="inline h-3 w-3 mr-1" /> ¥{product.price?.toFixed(2)}</span>
+                            <span><DollarSign className="inline h-3 w-3 mr-1" /> ${product.price?.toFixed(2)}</span>
                             <span>{product.category}</span>
                           </div>
                           <p className="text-sm mt-2 line-clamp-2">
@@ -270,7 +270,7 @@ const AdminProductsPage: React.FC = () => {
                           {renderStatusBadge(product.status)}
                         </div>
                         <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
-                          <span><DollarSign className="inline h-3 w-3 mr-1" /> ¥{product.price?.toFixed(2)}</span>
+                          <span><DollarSign className="inline h-3 w-3 mr-1" /> ${product.price?.toFixed(2)}</span>
                           <span>{product.category}</span>
                           <span>{product.createdAt ? format(new Date(product.createdAt), 'yyyy-MM-dd') : ''}</span>
                         </div>

@@ -478,7 +478,7 @@ const ProductDetail = () => {
             </div>
             
             <div className="text-2xl font-bold text-primary-700 mb-4">
-              {isFree ? t("product.free") : `¥${product.price.toFixed(2)}`}
+              {isFree ? t("product.free") : `$${product.price.toFixed(2)}`}
             </div>
             
             <div className="prose prose-sm max-w-none mb-6">

@@ -527,7 +527,7 @@ const UserProfile = () => {
                                 {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}
                               </td>
                               <td className="py-4 px-4 text-right font-medium">
-                                ¥{order.totalAmount.toFixed(2)}
+                                ${order.totalAmount.toFixed(2)}
                               </td>
                               <td className="py-4 px-4 text-right">
                                 <Button

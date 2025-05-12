@@ -599,7 +599,7 @@ const AdminOrdersPage: React.FC = () => {
                             {t("order.customer")}: {order.userId ? getUserName(order.userId) : ''}
                           </p>
                           <p className="font-medium text-black">
-                            {t("order.total")}: ¥{formatPrice(order.totalAmount)}
+                            {t("order.total")}: ${formatPrice(order.totalAmount)}
                           </p>
                         </div>
 
@@ -622,7 +622,7 @@ const AdminOrdersPage: React.FC = () => {
                                     <div className="flex-grow">
                                       <div className="flex justify-between">
                                         <h3 className="font-medium">{item.listing?.title || `${t("product.title")} #${item.listingId}`}</h3>
-                                        <p className="font-medium">¥{formatPrice(item.unitPrice)}</p>
+                                        <p className="font-medium">${formatPrice(item.unitPrice)}</p>
                                       </div>
                                       <div className="text-sm text-gray-500">
                                         {t("cart.quantity")}: {item.quantity}
@@ -745,7 +745,7 @@ const AdminOrdersPage: React.FC = () => {
                     </div>
                     <div className="bg-gray-50 p-4 rounded-md">
                       <h3 className="font-medium text-sm text-gray-500 mb-1">{t("order.total")}</h3>
-                      <p className="font-medium text-lg">¥{formatPrice(selectedOrder.totalAmount)}</p>
+                      <p className="font-medium text-lg">${formatPrice(selectedOrder.totalAmount)}</p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-md">
                       <h3 className="font-medium text-sm text-gray-500 mb-1">{t("order.paymentMethod")}</h3>
@@ -811,7 +811,7 @@ const AdminOrdersPage: React.FC = () => {
                             <div className="flex-grow">
                               <div className="flex justify-between">
                                 <h3 className="font-medium">{item.listing?.title || `${t("product.title")} #${item.listingId}`}</h3>
-                                <p className="font-medium">¥{formatPrice(item.unitPrice)}</p>
+                                <p className="font-medium">${formatPrice(item.unitPrice)}</p>
                               </div>
                               <div className="flex justify-between text-sm text-gray-500 mt-1">
                                 <p>{t("cart.quantity")}: {item.quantity}</p>
@@ -842,14 +842,14 @@ const AdminOrdersPage: React.FC = () => {
                     <div className="bg-white p-4 rounded-md border">
                       <div className="flex justify-between py-2">
                         <span>{t("order.subtotal")}</span>
-                        <span>¥{formatPrice(selectedOrder.totalAmount)}</span>
+                        <span>${formatPrice(selectedOrder.totalAmount)}</span>
                       </div>
 
                       <Separator className="my-2" />
 
                       <div className="flex justify-between py-2 font-bold">
                         <span>{t("order.total")}</span>
-                        <span>¥{formatPrice(selectedOrder.totalAmount)}</span>
+                        <span>${formatPrice(selectedOrder.totalAmount)}</span>
                       </div>
                     </div>
                   </div>
@@ -1019,7 +1019,7 @@ const AdminOrdersPage: React.FC = () => {
                     userOrders.map(order => (
                       <div key={order.id} className="flex justify-between">
                         <span>{t("order.title")} # {order.id}</span>
-                        <span>¥{formatPrice(order.totalAmount)}</span>
+                        <span>${formatPrice(order.totalAmount)}</span>
                       </div>
                     ))
                   ) : (
@@ -1035,7 +1035,7 @@ const AdminOrdersPage: React.FC = () => {
                     userFavorites.map(favorite => (
                       <div key={favorite.id} className="flex justify-between">
                         <span>{favorite.title}</span>
-                        <span>¥{formatPrice(favorite.price)}</span>
+                        <span>${formatPrice(favorite.price)}</span>
                       </div>
                     ))
                   ) : (
