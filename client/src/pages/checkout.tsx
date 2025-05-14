@@ -158,7 +158,7 @@ const Checkout = () => {
       const order = await apiRequest('POST', '/api/orders', {
         items: orderItems,
         totalAmount: total,
-        currency: 'CNY'
+        currency: 'AUD'
       });
       setOrderId(order.id);
       
@@ -170,7 +170,7 @@ const Checkout = () => {
       await apiRequest('POST', '/api/payments', {
         orderId: order.id,
         amount: total,
-        currency: 'CNY',
+        currency: 'AUD',
         paymentMethod: paymentMethod
       });
       

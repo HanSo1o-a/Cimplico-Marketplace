@@ -119,7 +119,7 @@ async function generateTestData() {
       type: ListingType.DIGITAL,
       status: ListingStatus.ACTIVE,
       images: JSON.stringify(["https://images.unsplash.com/photo-1554224155-6d2f99c7dff1"]),
-      category: "税务申报",
+      category: "tax declaration",
       tags: JSON.stringify(["增值税", "申报", "计算工具"]),
       rejectionReason: "",
       downloadUrl: "https://example.com/files/vat-tool.xlsx"
@@ -183,7 +183,7 @@ async function generateTestData() {
       userId: user2.id,
       status: OrderStatus.PAID,
       totalAmount: listing1.price,
-      currency: "CNY"
+      currency: "AUD"
     }).returning();
 
     // 创建订单项
@@ -216,7 +216,7 @@ async function generateTestData() {
       userId: user3.id,
       status: OrderStatus.COMPLETED,
       totalAmount: listing2.price + listing3.price,
-      currency: "CNY"
+      currency: "AUD"
     }).returning();
 
     // 创建订单项

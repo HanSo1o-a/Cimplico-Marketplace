@@ -5,7 +5,7 @@
 ## 前提条件
 
 - 安装 Docker 和 Docker Compose
-- 确保端口 5000 和 5432 可用
+- 确保端口 5001 和 5432 可用
 
 ## 部署步骤
 
@@ -37,7 +37,7 @@ docker-compose -f docker-compose.deploy.yml up -d
 
 ### 4. 验证部署
 
-应用将在 http://localhost:5000 上运行。您可以通过访问此地址来验证部署是否成功。
+应用将在 http://localhost:5001 上运行。您可以通过访问此地址来验证部署是否成功。
 
 ### 5. 查看日志
 
@@ -65,7 +65,7 @@ docker-compose -f docker-compose.deploy.yml ps
 
 ### 端口冲突
 
-如果端口 5000 或 5432 已被占用，您可以修改 `docker-compose.deploy.yml` 文件中的端口映射。
+如果端口 5001 或 5432 已被占用，您可以修改 `docker-compose.deploy.yml` 文件中的端口映射。
 
 ### 数据持久化
 

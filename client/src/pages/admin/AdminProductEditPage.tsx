@@ -34,13 +34,13 @@ const AdminProductEditPage: React.FC = () => {
   return (
     <Card className="max-w-2xl mx-auto mt-10">
       <CardHeader>
-        <CardTitle>编辑商品 #{id}</CardTitle>
+        <CardTitle>Edit Product #{id}</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="flex justify-center items-center py-10">
             <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-            <span>加载中...</span>
+            <span>Loading...</span>
           </div>
         ) : product ? (
           <ProductForm product={product} onSuccess={handleSuccess} />

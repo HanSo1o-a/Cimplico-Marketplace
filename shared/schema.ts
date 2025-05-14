@@ -165,7 +165,7 @@ export const orders = pgTable("orders", {
   userId: integer("user_id").notNull().references(() => users.id),
   status: text("status").notNull().default(OrderStatus.CREATED),
   totalAmount: doublePrecision("total_amount").notNull(),
-  currency: text("currency").notNull().default("CNY"),
+  currency: text("currency").notNull().default("AUD"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
@@ -184,7 +184,7 @@ export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull().references(() => orders.id),
   amount: doublePrecision("amount").notNull(),
-  currency: text("currency").notNull().default("CNY"),
+  currency: text("currency").notNull().default("AUD"),
   status: text("status").notNull().default(PaymentStatus.PENDING),
   paymentMethod: text("payment_method").notNull(),
   transactionId: text("transaction_id"),

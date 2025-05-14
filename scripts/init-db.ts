@@ -142,12 +142,12 @@ async function initDatabase() {
     const listing4 = await db.insert(listings).values({
       vendorId: vendorProfile2.id,
       title: "企业所得税自动计算工具",
-      description: "自动计算企业所得税的Excel工具，内置最新税率表和减免政策，简化税务申报流程。",
+      description: "自动计算企业所得税的Excel工具，内置最新税率表和减免政策，简化tax declaration流程。",
       price: 159,
       type: "DIGITAL",
       status: ListingStatus.ACTIVE,
       images: ["https://images.unsplash.com/photo-1526304640581-d334cdbbf45e"],
-      category: "税务申报",
+      category: "tax declaration",
       tags: ["税务", "企业所得税", "计算工具"],
       rejectionReason: null,
       downloadUrl: "https://example.com/files/income-tax-calculator.xlsx"

@@ -20,13 +20,13 @@ RUN npm install -g cross-env tsx
 
 # 设置环境变量
 ENV NODE_ENV=development
-ENV PORT=5000
+ENV PORT=5001
 
 # 预编译Tailwind CSS
 RUN npx tailwindcss -i ./client/src/index.css -o ./client/src/tailwind.css
 
 # 暴露端口
-EXPOSE 5000
+EXPOSE 5001
 
 # 启动命令 - 与本地开发环境相同
 CMD ["npm", "run", "dev"]

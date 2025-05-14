@@ -19,7 +19,8 @@ i18n
         translation: zhTranslation
       }
     },
-    fallbackLng: "zh",    // 默认语言
+    lng: "en",            //默认语言
+    fallbackLng: "en",    // 
     interpolation: {
       escapeValue: false  // React 已经安全地转义变量
     },

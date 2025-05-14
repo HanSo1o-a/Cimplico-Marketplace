@@ -945,7 +945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 编辑商品 PATCH /api/listings/:id
+  // Edit Product PATCH /api/listings/:id
   app.patch("/api/listings/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -1670,7 +1670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: t('error.unauthorized', req.language) });
       }
 
-      const { items, totalAmount, currency = "CNY" } = req.body;
+      const { items, totalAmount, currency = "AUD" } = req.body;
 
       // 创建订单
       const order = await storage.createOrder({
@@ -2298,7 +2298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const order = await storage.createOrder({
         userId: req.user.id,
         totalAmount,
-        currency: currency || "CNY",
+        currency: currency || "AUD",
         status: OrderStatus.CREATED
       });
 
@@ -2398,7 +2398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const payment = await storage.createPayment({
         orderId,
         amount,
-        currency: currency || "CNY",
+        currency: currency || "AUD",
         paymentMethod,
         status: PaymentStatus.PENDING,
         transactionId: null
@@ -2506,7 +2506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         sales: {
           total: totalSales,
-          currency: "CNY"
+          currency: "AUD"
         }
       });
     } catch (error: any) {

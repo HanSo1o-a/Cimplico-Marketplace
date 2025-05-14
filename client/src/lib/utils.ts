@@ -26,10 +26,10 @@ export function formatDate(date: Date | string | number | null) {
 /**
  * 格式化价格，加上货币符号和千位分隔符
  * @param price 价格数值
- * @param currency 货币代码，默认CNY
+ * @param currency 货币代码，默认AUD
  * @returns 格式化后的价格字符串
  */
-export function formatPrice(price: number, currency: string = 'CNY'): string {
+export function formatPrice(price: number, currency: string = 'AUD'): string {
   return new Intl.NumberFormat('zh-CN', {
     style: 'currency',
     currency,

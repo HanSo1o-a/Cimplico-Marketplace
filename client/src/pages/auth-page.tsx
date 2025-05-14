@@ -361,7 +361,7 @@ const AuthPage = () => {
                 </div>
                 <div className="bg-white bg-opacity-20 p-4 rounded-lg">
                   <h3 className="font-semibold text-lg mb-2">{t("categories.tax")}</h3>
-                  <p className="text-sm">税务申报工具和模板，简化纳税申报流程。</p>
+                  <p className="text-sm">tax declaration工具和模板，简化纳税申报流程。</p>
                 </div>
                 <div className="bg-white bg-opacity-20 p-4 rounded-lg">
                   <h3 className="font-semibold text-lg mb-2">{t("categories.compliance")}</h3>

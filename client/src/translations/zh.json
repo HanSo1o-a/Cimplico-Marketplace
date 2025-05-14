@@ -1,6 +1,6 @@
 {
   "common": {
-    "loading": "加载中...",
+    "loading": "loading...",
     "backToHome": "返回首页",
     "search": "搜索",
     "save": "保存",
@@ -107,7 +107,7 @@
     "products": "我的商品",
     "orders": "订单管理",
     "addProduct": "添加商品",
-    "editProduct": "编辑商品",
+    "editProduct": "Edit Product",
     "verificationStatus": "认证状态",
     "pending": "审核中",
     "approved": "已认证",
@@ -290,7 +290,7 @@
   "categories": {
     "financial": "财务报表模板",
     "audit": "审计工作底稿",
-    "tax": "税务申报工具",
+    "tax": "tax declaration工具",
     "compliance": "合规检查清单",
     "analysis": "财务分析工具",
     "all": "查看全部分类"

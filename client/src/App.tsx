@@ -84,7 +84,7 @@ function RouterSelector() {
   // 移除管理员自动重定向逻辑
   
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">加载中...</div>;
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   // 根据用户角色选择不同的路由和布局

@@ -179,7 +179,7 @@ const AdminOrdersPage: React.FC = () => {
             userId: order.userId,
             status: order.status,
             totalAmount: order.totalAmount,
-            currency: "CNY", // 默认货币
+            currency: "AUD", // 默认货币
             createdAt: order.createdAt,
             updatedAt: order.createdAt, // 统计接口可能没有updatedAt字段
             paymentStatus: order.paymentStatus,

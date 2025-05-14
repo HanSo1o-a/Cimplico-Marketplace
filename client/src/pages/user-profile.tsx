@@ -364,7 +364,7 @@ const UserProfile = () => {
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("name")}</FormLabel>
+                            <FormLabel>{t("First Name")}</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
@@ -378,7 +378,7 @@ const UserProfile = () => {
                         name="lastName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t("Late")}</FormLabel>
+                            <FormLabel>{t("Last Name")}</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>

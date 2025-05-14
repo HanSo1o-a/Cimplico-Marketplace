@@ -71,8 +71,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // 使用端口5000以匹配工作流配置
-  const port = 5000;
+  // 使用端口5001以匹配工作流配置
+  const port = 5001;
   server.listen({
     port,
     host: "0.0.0.0"

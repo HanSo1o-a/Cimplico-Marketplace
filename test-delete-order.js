@@ -5,7 +5,7 @@ const testDeleteOrder = async () => {
     const vendorId = 1;
     const orderId = 1;
     
-    const response = await fetch(`http://localhost:5000/api/vendors/${vendorId}/orders/${orderId}`, {
+    const response = await fetch(`http://localhost:5001/api/vendors/${vendorId}/orders/${orderId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
