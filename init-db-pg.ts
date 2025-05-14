@@ -32,7 +32,7 @@ async function initDatabase() {
       status: 'ACTIVE',
       avatar: null,
       phone: null,
-      language: 'zh'
+      language: 'en'
     }).returning();
 
     console.log('已创建管理员账户:', admin.email);
@@ -47,7 +47,7 @@ async function initDatabase() {
       status: 'ACTIVE',
       avatar: null,
       phone: '13800138000',
-      language: 'zh'
+      language: 'en'
     }).returning();
 
     const [vendor2] = await db.insert(schema.users).values({
@@ -59,7 +59,7 @@ async function initDatabase() {
       status: 'ACTIVE',
       avatar: null,
       phone: '13900139000',
-      language: 'zh'
+      language: 'en'
     }).returning();
 
     console.log('已创建供应商账户:', vendor1.email, vendor2.email);
@@ -74,7 +74,7 @@ async function initDatabase() {
       status: 'ACTIVE',
       avatar: null,
       phone: '13700137000',
-      language: 'zh'
+      language: 'en'
     }).returning();
 
     console.log('已创建普通用户:', user1.email);

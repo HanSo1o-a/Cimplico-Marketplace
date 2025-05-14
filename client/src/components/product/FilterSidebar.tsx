@@ -93,16 +93,14 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   // 常用标签列表
   const popularTags = [
-    "税务",
-    "审计",
-    "财务",
-    "合规",
-    "金融",
-    "报表",
-    "个税",
-    "企业所得税",
-    "分析",
-    "风险评估",
+    "Tax",
+    "Audit",
+    "Finance",
+    "Statement",
+    "Individual income tax",
+    "Corporate income tax",
+    "Analyse",
+    "Risk assessment",
   ];
 
   // 区域列表

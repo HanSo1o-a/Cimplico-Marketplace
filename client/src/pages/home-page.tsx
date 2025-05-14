@@ -109,12 +109,7 @@ const HomePage = () => {
               >
                 {t("Search here")}
               </Button>
-              <Button 
-                variant="outline"
-                onClick={() => setLocation("/auth")}
-              >
-                {t("home.hero.getStartedButton")}
-              </Button>
+              
             </div>
           </div>
           {/* <div className="flex-1">
@@ -187,10 +182,10 @@ const HomePage = () => {
                   <h4 className="font-medium mb-2 uppercase text-sm text-gray-700">{t("filters.categories")}</h4>
                   <div className="flex flex-wrap gap-2 mb-6">
                     {isCategoriesLoading ? (
-                      <span>加载分类中...</span>
+                      <span>Loading in the catefory...</span>
                     ) : (
                       categoriesData.length === 0 ? (
-                        <span>暂无分类</span>
+                        <span>No calssification</span>
                       ) : (
                         categoriesData.map((cat: any) => (
                           <Badge

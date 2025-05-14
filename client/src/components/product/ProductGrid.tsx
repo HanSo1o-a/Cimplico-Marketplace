@@ -47,7 +47,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         <div className="bg-muted/30 rounded-full p-6 mb-4">
           <Package2 className="h-12 w-12 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-medium mb-2">暂无结果</h3>
+        <h3 className="text-lg font-medium mb-2">No results</h3>
         <p className="text-center text-muted-foreground max-w-md">
           {emptyMessage}
         </p>

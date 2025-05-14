@@ -85,7 +85,7 @@ export const users = pgTable("users", {
   status: text("status").notNull().default(UserStatus.ACTIVE),
   avatar: text("avatar"),
   phone: text("phone"),
-  language: text("language").default("zh"),
+  language: text("language").default("en"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });

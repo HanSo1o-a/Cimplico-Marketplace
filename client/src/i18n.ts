@@ -4,7 +4,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 // 导入翻译文件
 import enTranslation from "./translations/en.json";
-import zhTranslation from "./translations/zh.json";
+import enTranslation from "./translations/en.json";
 
 // 初始化 i18next
 i18n
@@ -15,8 +15,8 @@ i18n
       en: {
         translation: enTranslation
       },
-      zh: {
-        translation: zhTranslation
+      en: {
+        translation: enTranslation
       }
     },
     lng: "en",            //默认语言

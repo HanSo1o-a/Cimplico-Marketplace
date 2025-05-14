@@ -353,19 +353,19 @@ const AuthPage = () => {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-white bg-opacity-20 p-4 rounded-lg">
                   <h3 className="font-semibold text-lg mb-2">{t("categories.financial")}</h3>
-                  <p className="text-sm">高质量的财务报表模板，帮助您快速创建专业报告。</p>
+                  <p className="text-sm">High-quality financial statement templates help you quickly create professional reports.</p>
                 </div>
                 <div className="bg-white bg-opacity-20 p-4 rounded-lg">
                   <h3 className="font-semibold text-lg mb-2">{t("categories.audit")}</h3>
-                  <p className="text-sm">标准化的审计工作底稿，符合最新的行业标准。</p>
+                  <p className="text-sm">Standardized audit working papers that comply with the latest industry standards.。</p>
                 </div>
                 <div className="bg-white bg-opacity-20 p-4 rounded-lg">
                   <h3 className="font-semibold text-lg mb-2">{t("categories.tax")}</h3>
-                  <p className="text-sm">tax declaration工具和模板，简化纳税申报流程。</p>
+                  <p className="text-sm">Tax declaration tools and templates, simplifying the tax declaration process.。</p>
                 </div>
                 <div className="bg-white bg-opacity-20 p-4 rounded-lg">
                   <h3 className="font-semibold text-lg mb-2">{t("categories.compliance")}</h3>
-                  <p className="text-sm">全面的合规检查清单，确保业务合规运营。</p>
+                  <p className="text-sm">A comprehensive compliance checklist to ensure business compliance and operation.</p>
                 </div>
               </div>
             </div>

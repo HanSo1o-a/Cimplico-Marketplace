@@ -323,9 +323,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, vendorId, onSuccess 
                       </FormControl>
                       <SelectContent>
                         {isCategoriesLoading ? (
-                          <SelectItem value="__loading__" disabled>加载分类中...</SelectItem>
+                          <SelectItem value="__loading__" disabled>Loading in the catefory...</SelectItem>
                         ) : categoriesData.length === 0 ? (
-                          <SelectItem value="__none__" disabled>暂无分类</SelectItem>
+                          <SelectItem value="__none__" disabled>No calssification</SelectItem>
                         ) : (
                           categoriesData
                             .filter((cat: any) => cat.name && cat.name !== "")

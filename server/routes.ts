@@ -3035,7 +3035,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastName,
           email,
           phone: phone || null,
-          language: language || 'zh',
+          language: language || 'en',
           updatedAt: new Date()
         })
         .where(eq(users.id, userId))

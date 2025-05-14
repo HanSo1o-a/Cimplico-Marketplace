@@ -73,7 +73,7 @@ function initDatabase() {
                         status: 'ACTIVE',
                         avatar: null,
                         phone: null,
-                        language: 'zh'
+                        language: 'en'
                     }).returning()];
                 case 5:
                     admin = (_a.sent())[0];
@@ -87,7 +87,7 @@ function initDatabase() {
                             status: 'ACTIVE',
                             avatar: null,
                             phone: '13800138000',
-                            language: 'zh'
+                            language: 'en'
                         }).returning()];
                 case 6:
                     vendor1 = (_a.sent())[0];
@@ -100,7 +100,7 @@ function initDatabase() {
                             status: 'ACTIVE',
                             avatar: null,
                             phone: '13900139000',
-                            language: 'zh'
+                            language: 'en'
                         }).returning()];
                 case 7:
                     vendor2 = (_a.sent())[0];
@@ -114,7 +114,7 @@ function initDatabase() {
                             status: 'ACTIVE',
                             avatar: null,
                             phone: '13700137000',
-                            language: 'zh'
+                            language: 'en'
                         }).returning()];
                 case 8:
                     user1 = (_a.sent())[0];

@@ -1,3 +1,181 @@
+# WorkpaperMarket API Documentation
+
+**Last Updated: 2025-04-22**
+
+---
+
+## Authentication & Permission Notes
+
+- Most write operations (e.g., create, update, review) require user login and appropriate roles (e.g., vendor, admin).
+- General users, vendors, and admins have different access levels. Some endpoints are only available to admins.
+
+---
+
+## Vendor Related
+
+### Create Vendor
+
+- `POST /api/vendors`
+- Description: Promote the current user to vendor and create vendor profile.
+- Permission: Logged-in user
+- Request Body: `{ companyName, businessNumber, website?, description? }`
+- Returns: Vendor profile object
+
+### Update Vendor Profile
+
+- `PUT /api/vendors/:id`
+- Description: Update vendor information.
+- Permission: Vendor owner or admin
+- Request Body: Partial vendor fields
+- Returns: Updated vendor object
+
+### Get All Vendors *(Admin Only)*
+
+- `GET /api/vendors/all`
+- Description: Retrieve all vendors with user info.
+- Permission: Admin
+- Returns: Array of vendors
+
+### Get Pending Vendors *(Admin Only)*
+
+- `GET /api/admin/vendors/pending`
+- `GET /api/vendors/pending`
+- Description: Get all vendors pending approval.
+- Permission: Admin
+- Returns: Array of pending vendors
+
+### Approve / Reject Vendor *(Admin Only)*
+
+- `PATCH /api/admin/vendors/:id`
+- Description: Update verification status or rejection reason.
+- Request Body: `{ verificationStatus, rejectionReason? }`
+
+- `POST /api/vendors/:id/approve`
+- `POST /api/vendors/:id/reject`
+- Description: Approve or reject vendor.
+- Request Body (reject): `{ reason }`
+- Returns: Updated vendor object
+
+### Get Verified Vendors
+
+- `GET /api/vendors`
+- Description: List all approved vendors with listing count and user info.
+- Returns: Array of vendors
+
+### Get Vendor Details
+
+- `GET /api/vendors/:id`
+- Description: Get a vendor’s profile, user info, and listings.
+- Returns: Vendor object
+
+---
+
+## Listing Related
+
+### Get All Listings
+
+- `GET /api/listings`
+- Description: Retrieve all listings sorted by latest.
+- Returns: Array of listings
+
+### Get Pending Listings
+
+- `GET /api/listings/pending`
+- Description: Get all listings awaiting approval.
+- Permission: Admin (implementation defined)
+- Returns: Array of listings
+
+### Get Featured Listings
+
+- `GET /api/listings/featured?limit=4`
+- Description: Get top featured listings.
+- Returns: Array of listings
+
+### Get Listing Details
+
+- `GET /api/listings/:id`
+- Description: Get listing details with vendor, comments, favorite status.
+- Returns: Listing object
+
+### Create Listing *(Vendor)*
+
+- `POST /api/vendors/:vendorId/listings`
+- Description: Vendor creates a new listing.
+- Permission: Vendor or admin
+- Request Body: Listing fields
+- Returns: Created listing object
+
+---
+
+## Category Related
+
+### Get All Categories
+
+- `GET /api/categories`
+- Description: Get all available categories.
+- Returns: Array of categories
+
+### Get Category Details
+
+- `GET /api/categories/:id`
+- Description: Get info of a specific category.
+- Returns: Category object
+
+---
+
+## User Related
+
+### Get Current User Info
+
+- `GET /api/me`
+- Description: Fetch current user profile.
+- Permission: Logged-in user
+- Returns: User object
+
+### Get Current User’s Vendor Profile
+
+- `GET /api/me/vendor`
+- Description: Get vendor profile linked to current user.
+- Permission: Vendor
+- Returns: Vendor object
+
+---
+
+## Comment Related
+
+### Get Listing Comments
+
+- `GET /api/listings/:id/comments`
+- Description: Get all comments for a specific listing.
+- Returns: Array of comments
+
+---
+
+## Miscellaneous
+
+### Get Saved Listings
+
+- `GET /api/user/saved-listings`
+- Description: Get current user’s saved listings.
+- Permission: Logged-in user
+- Returns: Array of listings
+
+### Get Testimonials
+
+- `GET /api/testimonials`
+- Description: Get testimonials shown on the homepage.
+- Returns: Array of testimonials
+
+---
+
+## Notes
+
+- All responses are standard JSON format.
+- Error responses include a `message` field.
+- Authenticated endpoints require a valid cookie/session.
+
+
+
 # WorkpaperMarket API 文档
 
 **更新时间：2025-04-22**

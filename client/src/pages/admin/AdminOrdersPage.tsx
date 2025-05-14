@@ -1003,7 +1003,7 @@ const AdminOrdersPage: React.FC = () => {
                   )}
                   <div className="flex justify-between">
                     <span className="text-gray-500">{t("admin.language")}:</span>
-                    <span>{selectedUserData.language === "zh" ? t("admin.languageChinese") : t("admin.languageEnglish")}</span>
+                    <span>{selectedUserData.language === "en" ? t("admin.languageChinese") : t("admin.languageEnglish")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">{t("admin.createdAt")}:</span>

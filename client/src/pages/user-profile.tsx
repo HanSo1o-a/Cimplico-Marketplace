@@ -155,7 +155,7 @@ const UserProfile = () => {
     lastName: z.string().min(1, { message: t("请输入您的姓氏") }),
     email: z.string().email({ message: t("请输入有效的电子邮件地址") }),
     phone: z.string().optional(),
-    language: z.string().default("zh"),
+    language: z.string().default("en"),
   });
 
   // Password change schema
@@ -176,7 +176,7 @@ const UserProfile = () => {
       lastName: user?.lastName || "",
       email: user?.email || "",
       phone: user?.phone || "",
-      language: user?.language || "zh",
+      language: user?.language || "en",
     },
   });
 
@@ -188,7 +188,7 @@ const UserProfile = () => {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone || "",
-        language: user.language || "zh",
+        language: user.language || "en",
       });
     }
   }, [user, profileForm]);
@@ -350,7 +350,7 @@ const UserProfile = () => {
           {activeTab === "profile" && (
             <Card>
               <CardHeader>
-                <CardTitle>{t("personalInfo")}</CardTitle>
+                <CardTitle>{t("Personal Infomation")}</CardTitle>
                 <CardDescription>
                   {t("Edit your personal information")}
                 </CardDescription>
@@ -432,7 +432,7 @@ const UserProfile = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="zh">{t("common.simplifiedChinese")}</SelectItem>
+                              <SelectItem value="en">{t("common.simplifiedChinese")}</SelectItem>
                               <SelectItem value="en">{t("English")}</SelectItem>
                             </SelectContent>
                           </Select>
@@ -710,13 +710,13 @@ const UserProfile = () => {
                 <CardContent>
                   <div className="flex gap-4">
                     <Button
-                      variant={user.language === "zh" ? "default" : "outline"}
+                      variant={user.language === "en" ? "default" : "outline"}
                       onClick={() => {
-                        updateProfileMutation.mutate({ language: "zh" });
+                        updateProfileMutation.mutate({ language: "en" });
                       }}
                       disabled={updateProfileMutation.isPending}
                     >
-                      {user.language === "zh" && <Check className="mr-2 h-4 w-4" />}
+                      {user.language === "en" && <Check className="mr-2 h-4 w-4" />}
                       {t("common.simplifiedChinese")}
                     </Button>
                     <Button

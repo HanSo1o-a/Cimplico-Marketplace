@@ -14,7 +14,7 @@ export function formatDate(date: Date | string | number | null) {
   if (!date) return '无日期';
   
   const d = new Date(date);
-  return d.toLocaleDateString('zh-CN', {
+  return d.toLocaleDateString('en-CN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -30,7 +30,7 @@ export function formatDate(date: Date | string | number | null) {
  * @returns 格式化后的价格字符串
  */
 export function formatPrice(price: number, currency: string = 'AUD'): string {
-  return new Intl.NumberFormat('zh-CN', {
+  return new Intl.NumberFormat('en-CN', {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,

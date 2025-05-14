@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 
 // 支持的语言列表
 const languages = [
-  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "en", name: "中文", flag: "🇨🇳" },
   { code: "en", name: "English", flag: "🇬🇧" }
 ];
 

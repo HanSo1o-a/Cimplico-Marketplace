@@ -161,7 +161,7 @@ const UsersTable = ({ users }: { users: User[] }) => {
       email: "",
       phone: "",
       role: UserRole.USER,
-      language: "zh",
+      language: "en",
     },
   });
 
@@ -183,7 +183,7 @@ const UsersTable = ({ users }: { users: User[] }) => {
         email: selectedUser.email,
         phone: selectedUser.phone || "",
         role: selectedUser.role as UserRole,
-        language: selectedUser.language || "zh",
+        language: selectedUser.language || "en",
       });
     }
   }, [selectedUser, editForm]);
@@ -457,7 +457,7 @@ const UsersTable = ({ users }: { users: User[] }) => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="zh">{t("admin.languageChinese")}</SelectItem>
+                        <SelectItem value="en">{t("admin.languageChinese")}</SelectItem>
                         <SelectItem value="en">{t("admin.languageEnglish")}</SelectItem>
                       </SelectContent>
                     </Select>

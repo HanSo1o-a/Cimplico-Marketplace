@@ -384,9 +384,9 @@ const Header = () => {
                 <div className="bg-neutral-50">
                   <ul>
                     {isCategoriesLoading ? (
-                      <li className="px-6 py-2 text-neutral-400">加载分类中...</li>
+                      <li className="px-6 py-2 text-neutral-400">Loading in the catefory...</li>
                     ) : categoriesData.length === 0 ? (
-                      <li className="px-6 py-2 text-neutral-400">暂无分类</li>
+                      <li className="px-6 py-2 text-neutral-400">No calssification</li>
                     ) : (
                       categoriesData.map((cat: any) => (
                         <li key={cat.id}>

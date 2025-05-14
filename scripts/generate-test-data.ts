@@ -37,7 +37,7 @@ async function generateTestData() {
       role: UserRole.USER,
       status: UserStatus.ACTIVE,
       phone: "13800138001",
-      language: "zh"
+      language: "en"
     },
     {
       email: "user3@example.com",
@@ -47,7 +47,7 @@ async function generateTestData() {
       role: UserRole.USER,
       status: UserStatus.ACTIVE,
       phone: "13800138002",
-      language: "zh"
+      language: "en"
     },
     {
       email: "vendor3@example.com",
@@ -57,7 +57,7 @@ async function generateTestData() {
       role: UserRole.VENDOR,
       status: UserStatus.ACTIVE,
       phone: "13900139001",
-      language: "zh"
+      language: "en"
     },
     {
       email: "vendor4@example.com",
@@ -67,7 +67,7 @@ async function generateTestData() {
       role: UserRole.VENDOR,
       status: UserStatus.ACTIVE,
       phone: "13900139002",
-      language: "zh"
+      language: "en"
     }
   ];
 

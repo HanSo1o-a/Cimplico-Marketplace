@@ -3,10 +3,10 @@ import { Request, Response, NextFunction } from 'express';
 // 简易国际化中间件
 export const i18nMiddleware = (req: Request, res: Response, next: NextFunction) => {
   // 从请求 header、cookie 或 query 参数获取语言设置
-  const lang = req.headers['accept-language'] || req.query.lang || 'zh';
+  const lang = req.headers['accept-language'] || req.query.lang || 'en';
   
   // 只支持中文和英文
-  req.language = lang.toString().startsWith('en') ? 'en' : 'zh';
+  req.language = lang.toString().startsWith('en') ? 'en' : 'en';
   
   // 将语言设置注入到 response locals 中，方便视图访问
   res.locals.language = req.language;
@@ -25,7 +25,7 @@ declare global {
 
 // 翻译文本
 const translations: Record<string, Record<string, string>> = {
-  zh: {
+  en: {
     // 通用
     'app.name': 'Cimplico Marketplace',
     'app.tagline': '专业工作底稿市场',
@@ -110,7 +110,7 @@ const translations: Record<string, Record<string, string>> = {
 };
 
 // 翻译函数
-export const t = (key: string, lang: string = 'zh'): string => {
-  const language = lang.startsWith('en') ? 'en' : 'zh';
+export const t = (key: string, lang: string = 'en'): string => {
+  const language = lang.startsWith('en') ? 'en' : 'en';
   return translations[language][key] || key;
 };
